@@ -1,0 +1,487 @@
+/* Reset and Base Styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #1a202c; /* Dark background */
+    color: #cbd5e0; /* Light gray text */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent body scrollbars */
+}
+
+/* Header Section */
+.header {
+    background-color: #2d3748; /* Slightly lighter dark */
+    padding: 0.75rem 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: max-height 0.4s ease-out, opacity 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+    flex-shrink: 0; /* Prevent header from shrinking */
+    position: fixed; /* Overlay the map instead of pushing it */
+    top: 55px; /* below persistent button row */
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.header.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    border-bottom: none; /* Hide border when collapsed */
+    pointer-events: none; /* Allow clicks on the map */
+}
+
+.title-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #e2e8f0; /* Brighter text for title */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: #a0aec0; /* Dimmer info text */
+    flex-shrink: 0; /* Prevent shrinking */
+    margin-left: auto; /* Push info to the right */
+}
+
+
+/* Controls Section */
+.controls-section {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap; /* Allow wrapping of control groups */
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem; /* Row gap, column gap */
+    border: 1px solid #4a5568;
+    padding: 0.75rem;
+    border-radius: 4px;
+    background-color: #2d3748;
+    flex: 1 1 320px; /* Allow panels to share a row */
+    min-width: 250px; /* Prevent items from getting too small */
+}
+
+.controls h2 {
+    width: 100%;
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: #a0aec0;
+    border-bottom: 1px solid #4a5568;
+    padding-bottom: 0.25rem;
+}
+
+.control-group {
+    flex: 1 1 150px; /* Allow grow, allow shrink, base width */
+    min-width: 130px;
+}
+
+label {
+    display: block;
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+    color: #a0aec0;
+    white-space: nowrap;
+}
+
+input[type="number"],
+input[type="color"] {
+    width: 100%;
+    padding: 0.4rem;
+    background-color: #1a202c;
+    border: 1px solid #4a5568;
+    border-radius: 0.25rem;
+    color: #e2e8f0;
+    box-sizing: border-box; /* Include padding/border in width */
+    font-size: 0.875rem;
+}
+input[type="color"] {
+    padding: 0.2rem; /* Color inputs often need less padding */
+    min-height: 30px; /* Ensure color input clickable area */
+}
+
+input[type="range"] {
+    width: 100%;
+    cursor: pointer;
+}
+
+
+/* Buttons */
+.button-row {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1050; /* Above header */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    background-color: #2d3748;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #4a5568;
+}
+
+
+
+/* File input styling */
+.file-input-container {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle; /* Align with other buttons */
+}
+
+.file-input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+/* Header Toggle Button */
+.header-toggle {
+    position: fixed;
+    top: 60px; /* Align with moved header */
+    right: 5px;
+    z-index: 1060; /* Above header */
+}
+.header-toggle .btn {
+     padding: 0.3rem 0.6rem;
+     font-size: 0.75rem;
+}
+
+
+/* Map Container */
+.map-container {
+    flex: 1; /* Take remaining vertical space */
+    overflow: hidden; /* Crucial for pan/zoom */
+    position: relative; /* For loading overlay */
+    background-color: #1a202c; /* Ensure bg color */
+    cursor: grab; /* Default cursor for panning */
+    user-select: none; /* Prevent text selection */
+    -webkit-user-select: none; /* Safari */
+    touch-action: none; /* Prevent browser default touch actions like scroll/zoom */
+}
+
+.map-container.panning {
+    cursor: grabbing; /* Cursor while panning */
+}
+
+/* Cursor Modes */
+.map-container.reveal-mode canvas { cursor: crosshair; }
+.map-container.hide-mode canvas { cursor: cell; }
+.map-container.token-add-mode canvas { cursor: copy; }
+.map-container.token-remove-mode canvas { cursor: not-allowed; }
+.map-container.token-dragging canvas { cursor: move; }
+.map-container.token-hover canvas { cursor: pointer; }
+
+/* Tooltip for token notes */
+.token-tooltip {
+    position: absolute;
+    max-width: 200px;
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    z-index: 1010;
+    pointer-events: none;
+    display: none;
+    white-space: pre-wrap;
+}
+
+
+canvas {
+    display: block; /* Remove extra space below canvas */
+    background-color: transparent;
+}
+
+.map-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#map-layer {
+    background-color: #2d3748;
+    z-index: 0;
+    pointer-events: none;
+}
+#grid-layer { z-index: 1; pointer-events: none; }
+#token-layer { z-index: 2; }
+
+.loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(45, 55, 72, 0.8); /* Semi-transparent overlay */
+    color: white;
+    font-size: 1.25rem;
+    z-index: 10;
+}
+
+/* Debug Info Panel */
+#debug-info {
+    position: fixed;
+    bottom: 5px;
+    left: 5px;
+    background-color: rgba(0, 0, 0, 0.75);
+    color: #0f0; /* Green debug text */
+    padding: 8px;
+    font-size: 11px;
+    font-family: monospace;
+    max-width: 350px;
+    max-height: 150px;
+    overflow: auto;
+    z-index: 1000;
+    border-radius: 3px;
+    display: none; /* Toggled by JS */
+    border: 1px solid #4a5568;
+}
+#debug-info > div {
+    margin-bottom: 3px;
+    white-space: pre-wrap; /* Wrap long debug lines */
+}
+
+
+/* Status Indicator */
+#status-indicator {
+    display: none; /* Shown by JS */
+    padding: 3px 10px;
+    border-radius: 3px;
+    background-color: #4299e1; /* Default info color */
+    color: white;
+    font-size: 0.8rem;
+    margin-left: 5px; /* Space from previous element */
+    font-weight: bold;
+    animation: fadeInOut 4s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
+}
+
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1100; /* High z-index */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
+    backdrop-filter: blur(3px); /* Optional blur effect */
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.modal-content {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    margin: 10vh auto; /* Centered with margin top */
+    padding: 20px;
+    border-radius: 5px;
+    border: 1px solid #4a5568;
+    width: 90%;
+    max-width: 600px; /* Max width */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    position: relative; /* For close button positioning */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #4a5568;
+    padding-bottom: 0.75rem;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.close {
+    color: #a0aec0;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close:hover {
+    color: white;
+}
+
+.modal-body {
+    margin-bottom: 1rem;
+}
+.modal-body p {
+    margin-top: 0;
+    font-size: 0.9rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    border-top: 1px solid #4a5568;
+    padding-top: 0.75rem;
+}
+
+textarea#export-json {
+    width: 100%;
+    height: 250px;
+    background-color: #1a202c;
+    color: #e2e8f0;
+    border: 1px solid #4a5568;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    font-family: monospace;
+    font-size: 0.8rem;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+textarea#token-notes-input {
+    width: 100%;
+    background-color: #1a202c;
+    color: #e2e8f0;
+    border: 1px solid #4a5568;
+    border-radius: 0.25rem;
+    padding: 0.4rem;
+    font-size: 0.8rem;
+    resize: vertical;
+    box-sizing: border-box;
+    min-height: 60px;
+}
+
+#info-bar {
+    position: fixed;
+    bottom: 15px;
+    left: 15px;
+    background-color: rgba(25, 71, 186, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    z-index: 1000;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+#support-bar {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    background-color: rgba(25, 71, 186, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    z-index: 1000;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+#support-bar .icon {
+    font-size: 20px;
+    color: white;
+    opacity: 0.5;
+    line-height: 1;
+}
+
+#buy-me-coffee-link {
+    color: white;
+    text-decoration: none;
+}
+
+#buy-me-coffee-link:hover {
+    text-decoration: underline;
+}
+
+#zoom-display, #coord-display {
+    padding: 2px 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+#undo-btn, #redo-btn {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+}
+
+
+@media (max-width: 576px) {
+    .controls {
+        flex-basis: 100%;
+    }
+}
+
+.material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+    font-size: inherit;
+    line-height: 1;
+}
+
+#library-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid #4a5568;
+}
+
+#library-list li:last-child {
+    border-bottom: none;
+}
+
+#library-list .btn {
+    margin-left: 0.25rem;
+}
+
+#storage-info {
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    color: #a0aec0;
+}
