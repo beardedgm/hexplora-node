@@ -30,10 +30,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],  // React uses inline styles
-      imgSrc: ["'self'", "data:"],              // base64 map images use data: URIs
-      connectSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdn.jsdelivr.net", "https://www.googletagmanager.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "https://www.google-analytics.com"],
+      fontSrc: ["'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com", "https://fonts.googleapis.com"],
+      connectSrc: ["'self'", "https://www.google-analytics.com", "https://www.googletagmanager.com"],
     },
   },
 }));
