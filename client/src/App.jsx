@@ -10,21 +10,7 @@ export default function App() {
   const init = useAuthStore((s) => s.init);
 
   useEffect(() => {
-    const run = async () => {
-      await init();
-
-      // Check for Patreon callback after auth is initialized
-      const params = new URLSearchParams(window.location.search);
-      const patreonStatus = params.get('patreon');
-      if (patreonStatus === 'linked') {
-        await useAuthStore.getState().refreshPatreonStatus();
-        window.history.replaceState({}, '', window.location.pathname);
-      } else if (patreonStatus === 'error') {
-        console.error('Patreon linking failed:', params.get('message'));
-        window.history.replaceState({}, '', window.location.pathname);
-      }
-    };
-    run();
+    init();
   }, []);
 
   return (

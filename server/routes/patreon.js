@@ -41,7 +41,7 @@ router.get('/callback', async (req, res) => {
 
     if (!code || !state) {
       console.warn('[Patreon] Missing code or state params');
-      return res.redirect(`${clientUrl}/?patreon=error&message=missing_params`);
+      return res.redirect(`${clientUrl}/profile?patreon=error&message=missing_params`);
     }
 
     // Verify state to get userId
@@ -50,7 +50,7 @@ router.get('/callback', async (req, res) => {
       decoded = jwt.verify(state, process.env.JWT_SECRET);
     } catch {
       console.warn('[Patreon] Invalid state JWT');
-      return res.redirect(`${clientUrl}/?patreon=error&message=invalid_state`);
+      return res.redirect(`${clientUrl}/profile?patreon=error&message=invalid_state`);
     }
     console.log('[Patreon] State verified, userId:', decoded.userId);
 
@@ -103,7 +103,7 @@ router.get('/callback', async (req, res) => {
     const user = await User.findById(decoded.userId);
     if (!user) {
       console.warn('[Patreon] User not found:', decoded.userId);
-      return res.redirect(`${clientUrl}/?patreon=error&message=user_not_found`);
+      return res.redirect(`${clientUrl}/profile?patreon=error&message=user_not_found`);
     }
 
     user.patreonId = patreonUserId;
@@ -115,10 +115,10 @@ router.get('/callback', async (req, res) => {
     await user.save();
     console.log('[Patreon] User updated — patreonId:', patreonUserId, 'isPatron:', isActivePatron, 'mapLimit:', user.mapLimit);
 
-    res.redirect(`${clientUrl}/?patreon=linked`);
+    res.redirect(`${clientUrl}/profile?patreon=linked`);
   } catch (error) {
     console.error('[Patreon] Callback error:', error.response?.data || error.message);
-    res.redirect(`${clientUrl}/?patreon=error&message=server_error`);
+    res.redirect(`${clientUrl}/profile?patreon=error&message=server_error`);
   }
 });
 

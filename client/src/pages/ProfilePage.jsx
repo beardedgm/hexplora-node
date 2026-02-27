@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore.js';
 import * as mapsApi from '../services/maps.js';
@@ -17,6 +17,29 @@ export default function ProfilePage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [mapCount, setMapCount] = useState(null);
+  const patreonHandled = useRef(false);
+
+  // Handle Patreon callback redirect (?patreon=linked or ?patreon=error)
+  useEffect(() => {
+    if (patreonHandled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const patreonStatus = params.get('patreon');
+    if (!patreonStatus) return;
+
+    patreonHandled.current = true;
+    // Clean URL immediately
+    window.history.replaceState({}, '', window.location.pathname);
+
+    if (patreonStatus === 'linked') {
+      setMessage('Patreon linked! Refreshing your account...');
+      useAuthStore.getState().refreshPatreonStatus()
+        .then(() => setMessage('Patreon linked successfully!'))
+        .catch(() => setError('Patreon linked but failed to refresh status. Try reloading.'));
+    } else if (patreonStatus === 'error') {
+      const errorMsg = params.get('message') || 'unknown';
+      setError(`Patreon linking failed: ${errorMsg}. Check Render logs for details.`);
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
