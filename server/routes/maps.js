@@ -46,6 +46,14 @@ router.post('/', mapLimit, async (req, res) => {
   try {
     const { name, mapImageData, settings, view, revealedHexes, tokens } = req.body;
 
+    // Input validation
+    if (name !== undefined && (typeof name !== 'string' || name.length > 200)) {
+      return res.status(400).json({ error: 'Map name must be a string under 200 characters' });
+    }
+    if (mapImageData !== undefined && typeof mapImageData !== 'string') {
+      return res.status(400).json({ error: 'Invalid map image data' });
+    }
+
     const map = new Map({
       userId: req.user._id,
       name: name || 'Untitled Map',
@@ -73,6 +81,14 @@ router.put('/:id', async (req, res) => {
     }
 
     const { name, mapImageData, settings, view, revealedHexes, tokens } = req.body;
+
+    // Input validation
+    if (name !== undefined && (typeof name !== 'string' || name.length > 200)) {
+      return res.status(400).json({ error: 'Map name must be a string under 200 characters' });
+    }
+    if (mapImageData !== undefined && typeof mapImageData !== 'string') {
+      return res.status(400).json({ error: 'Invalid map image data' });
+    }
 
     if (name !== undefined) map.name = name;
     if (mapImageData !== undefined) map.mapImageData = mapImageData;

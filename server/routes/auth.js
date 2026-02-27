@@ -43,7 +43,7 @@ router.post('/register', [
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    const existingUsername = await User.findOne({ username: { $regex: new RegExp(`^${username}$`, 'i') } });
+    const existingUsername = await User.findOne({ username }).collation({ locale: 'en', strength: 2 });
     if (existingUsername) {
       return res.status(400).json({ error: 'Username already taken' });
     }
@@ -112,9 +112,9 @@ router.put('/profile', auth, [
 
     // Check uniqueness (case-insensitive, excluding current user)
     const existing = await User.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
+      username,
       _id: { $ne: req.user._id },
-    });
+    }).collation({ locale: 'en', strength: 2 });
     if (existing) {
       return res.status(400).json({ error: 'Username already taken' });
     }
