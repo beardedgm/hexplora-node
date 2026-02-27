@@ -41,8 +41,13 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/maps — create new map (with map limit check)
-router.post('/', mapLimit, async (req, res) => {
+// POST /api/maps — create new map (patron-only, with map limit check)
+router.post('/', (req, res, next) => {
+  if (!req.user.isPatron) {
+    return res.status(403).json({ error: 'Cloud storage requires an active membership' });
+  }
+  next();
+}, mapLimit, async (req, res) => {
   try {
     const { name, mapImageData, settings, view, revealedHexes, tokens } = req.body;
 

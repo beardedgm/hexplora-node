@@ -2,11 +2,19 @@ import { store } from '../state/index.js';
 import { STORAGE_KEY } from '../state/defaults.js';
 import { applySettingsToStore, applyTokensToStore, getFullStateFromStore } from './serialization.js';
 import * as mapsApi from '../services/maps.js';
+import { updateMapState } from './db.js';
+import useAuthStore from '../store/useAuthStore.js';
 import { log } from '../ui/debug.js';
 
-// Debounce timer for API saves
-let apiSaveTimer = null;
-const API_SAVE_DELAY = 2000; // 2 seconds
+// Debounce timer for persistent saves (API or IndexedDB)
+let persistSaveTimer = null;
+const PERSIST_SAVE_DELAY = 2000; // 2 seconds
+
+function isCloudEnabled() {
+    const token = localStorage.getItem('hexplora_token');
+    const user = useAuthStore.getState().user;
+    return !!token && user?.isPatron === true;
+}
 
 export function loadSavedState() {
     try {
@@ -33,24 +41,36 @@ export function saveState() {
         // Instant localStorage write (offline resilience)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(fullState));
 
-        // Debounced API save
+        // Debounced persistent save
         const currentMapId = store.get('currentMapId');
         if (currentMapId) {
-            if (apiSaveTimer) clearTimeout(apiSaveTimer);
-            apiSaveTimer = setTimeout(async () => {
+            if (persistSaveTimer) clearTimeout(persistSaveTimer);
+            persistSaveTimer = setTimeout(async () => {
                 try {
-                    await mapsApi.updateMap(currentMapId, {
-                        settings: fullState.settings,
-                        view: fullState.view,
-                        revealedHexes: fullState.revealedHexes,
-                        tokens: fullState.tokens,
-                    });
-                    log('State saved to server');
+                    if (isCloudEnabled()) {
+                        // Cloud path — save to API
+                        await mapsApi.updateMap(currentMapId, {
+                            settings: fullState.settings,
+                            view: fullState.view,
+                            revealedHexes: fullState.revealedHexes,
+                            tokens: fullState.tokens,
+                        });
+                        log('State saved to server');
+                    } else {
+                        // Local path — save to IndexedDB
+                        await updateMapState(currentMapId, {
+                            settings: fullState.settings,
+                            view: fullState.view,
+                            revealedHexes: fullState.revealedHexes,
+                            tokens: fullState.tokens,
+                        });
+                        log('State saved to local storage');
+                    }
                 } catch (err) {
-                    console.error('Error saving state to server:', err);
-                    log('Error saving to server: ' + err.message);
+                    console.error('Error saving state:', err);
+                    log('Error saving state: ' + err.message);
                 }
-            }, API_SAVE_DELAY);
+            }, PERSIST_SAVE_DELAY);
         }
 
         log('State saved');

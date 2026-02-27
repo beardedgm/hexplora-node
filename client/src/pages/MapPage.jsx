@@ -156,6 +156,11 @@ export default function MapPage() {
           <input type="file" id="map-file-input" className="file-input" accept="image/*" />
         </div>
         <button id="open-library-btn" className="btn btn-secondary btn-sm" title="Open saved map library">Map Library</button>
+        {user?.isPatron ? (
+          <span className="badge bg-success ms-1" title="Maps saved to cloud">Cloud</span>
+        ) : (
+          <span className="badge bg-secondary ms-1" title="Maps saved locally in this browser">Local</span>
+        )}
         <button id="screenshot-btn" className="btn btn-success btn-sm" title="Download map as PNG image">Download Image</button>
       </div>
 

@@ -94,3 +94,22 @@ export async function renameMap(id, newName) {
         return req;
     });
 }
+
+export async function updateMapState(id, state) {
+    const db = await openDatabase();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('maps', 'readwrite');
+        const objStore = tx.objectStore('maps');
+        const req = objStore.get(id);
+        req.onsuccess = () => {
+            const data = req.result;
+            if (data) {
+                data.state = state;
+                data.updated = Date.now();
+                objStore.put(data);
+            }
+        };
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
