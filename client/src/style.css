@@ -11,6 +11,14 @@ body {
     overflow: hidden; /* Prevent body scrollbars */
 }
 
+/* React root must mirror body's flex layout so .map-container flex:1 works */
+#root {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0; /* Allow flex children to shrink below content size */
+}
+
 /* Auth Pages */
 .auth-page {
     display: flex;
