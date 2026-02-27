@@ -20,7 +20,7 @@ router.get('/link', auth, (req, res) => {
       response_type: 'code',
       client_id: process.env.PATREON_CLIENT_ID,
       redirect_uri: process.env.PATREON_REDIRECT_URI,
-      scope: 'identity identity.memberships',
+      scope: 'identity identity.memberships campaigns',
       state,
     });
 
@@ -98,7 +98,25 @@ router.get('/callback', async (req, res) => {
         }
       }
     }
-    console.log('[Patreon] isActivePatron:', isActivePatron);
+    // If not found as a patron, check if user is the campaign creator/owner
+    if (!isActivePatron) {
+      try {
+        const campaignsResponse = await axios.get(`${PATREON_API_BASE}/campaigns`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const campaigns = campaignsResponse.data?.data || [];
+        console.log('[Patreon] User campaigns:', campaigns.map(c => c.id));
+        const isCreator = campaigns.some(c => c.id === process.env.PATREON_CAMPAIGN_ID);
+        if (isCreator) {
+          console.log('[Patreon] User is campaign OWNER — granting patron status');
+          isActivePatron = true;
+        }
+      } catch (campErr) {
+        console.log('[Patreon] Could not check campaign ownership:', campErr.response?.data || campErr.message);
+      }
+    }
+
+    console.log('[Patreon] Final isActivePatron:', isActivePatron);
 
     // Update user in database
     const user = await User.findById(decoded.userId);
