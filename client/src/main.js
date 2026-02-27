@@ -112,14 +112,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadMap();
     }
 
-    // Wait for Material Symbols font
-    if (document.fonts && document.fonts.ready) {
+    // Wait for Material Symbols font to actually be available
+    if (document.fonts) {
         try {
-            await document.fonts.ready;
+            await document.fonts.load('24px "Material Symbols Outlined"');
         } catch (err) {
             console.error('Font loading error:', err);
         }
         requestRedraw();
+        // Safety net: if any font loads late, redraw so icons render correctly
+        document.fonts.addEventListener('loadingdone', () => requestRedraw());
     }
 
     updateUndoRedoButtons();
