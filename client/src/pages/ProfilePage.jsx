@@ -47,7 +47,7 @@ export default function ProfilePage() {
     setError('');
     setMessage('');
 
-    if (username.trim() === user.username) {
+    if (!username.trim() || username.trim() === (user.username || '')) {
       return;
     }
 
@@ -98,12 +98,12 @@ export default function ProfilePage() {
                   maxLength={30}
                   pattern="[a-zA-Z0-9_]+"
                   title="Letters, numbers, and underscores only"
-                  required
+                  placeholder={user.username ? '' : user.email}
                 />
                 <button
                   type="submit"
                   className="btn btn-primary btn-sm"
-                  disabled={saving || username.trim() === user.username}
+                  disabled={saving || username.trim() === (user.username || '')}
                   style={{ whiteSpace: 'nowrap' }}
                 >
                   {saving ? 'Saving...' : 'Save'}
@@ -128,21 +128,33 @@ export default function ProfilePage() {
           {/* Patreon Status */}
           <div className="mb-3">
             <label className="form-label">Membership</label>
-            {user.isPatron ? (
-              <div className="d-flex align-items-center gap-2">
-                <span className="badge bg-success" style={{ fontSize: '0.9rem', padding: '0.4rem 0.75rem' }}>Member</span>
-                <span className="text-light small">Patreon linked</span>
+            {user.patreonId ? (
+              <div>
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  {user.isPatron ? (
+                    <>
+                      <span className="badge bg-success" style={{ fontSize: '0.9rem', padding: '0.4rem 0.75rem' }}>Member</span>
+                      <span style={{ color: '#e2e8f0' }} className="small">
+                        Patreon linked &mdash; {user.mapLimit} map slots
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ color: '#cbd5e0' }} className="small">
+                      Patreon linked (not an active patron &mdash; {user.mapLimit} map slots)
+                    </span>
+                  )}
+                </div>
                 <button
-                  className="btn btn-outline-secondary btn-sm ms-auto"
+                  className="btn btn-outline-secondary btn-sm"
                   onClick={handleUnlinkPatreon}
                 >
-                  Unlink
+                  Unlink Patreon
                 </button>
               </div>
             ) : (
               <div>
-                <p className="text-muted small mb-2">
-                  Link your Patreon to unlock 25 map slots (free accounts get 5).
+                <p style={{ color: '#cbd5e0' }} className="small mb-2">
+                  Link your Patreon to unlock 25 map slots (free accounts get {user.mapLimit}).
                 </p>
                 <button className="btn btn-warning btn-sm" onClick={linkPatreon}>
                   Link Patreon
@@ -155,7 +167,7 @@ export default function ProfilePage() {
           <div className="mb-3">
             <label className="form-label">Map Storage</label>
             <div className="d-flex align-items-center gap-2">
-              <span className="text-light">
+              <span style={{ color: '#e2e8f0' }}>
                 {mapCount !== null ? `${mapCount} / ${user.mapLimit}` : '...'} maps
               </span>
               {!user.isPatron && mapCount !== null && mapCount >= user.mapLimit && (
@@ -163,7 +175,7 @@ export default function ProfilePage() {
               )}
             </div>
             {!user.isPatron && (
-              <div className="small text-muted mt-1">
+              <div className="small" style={{ color: '#a0aec0', marginTop: '0.25rem' }}>
                 Free: {user.mapLimit} maps &middot; Members: 25 maps
               </div>
             )}
