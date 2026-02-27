@@ -6,8 +6,9 @@ import User from '../models/User.js';
 
 const router = Router();
 
-const PATREON_OAUTH_BASE = 'https://www.patreon.com/oauth2';
-const PATREON_API_BASE = 'https://www.patreon.com/api/oauth2/v2';
+const PATREON_OAUTH_BASE = 'https://www.patreon.com/oauth2';          // Browser-facing (authorize)
+const PATREON_API_BASE   = 'https://www.patreon.com/api/oauth2/v2';   // API v2 (identity, etc.)
+const PATREON_TOKEN_URL  = 'https://www.patreon.com/api/oauth2/token'; // Token exchange
 
 // GET /api/patreon/link — get Patreon OAuth URL (requires auth)
 router.get('/link', auth, (req, res) => {
@@ -56,7 +57,7 @@ router.get('/callback', async (req, res) => {
 
     // Exchange code for access token
     console.log('[Patreon] Exchanging code for token, client_id set:', !!process.env.PATREON_CLIENT_ID);
-    const tokenResponse = await axios.post(`${PATREON_OAUTH_BASE}/token`, new URLSearchParams({
+    const tokenResponse = await axios.post(PATREON_TOKEN_URL, new URLSearchParams({
       code,
       grant_type: 'authorization_code',
       client_id: process.env.PATREON_CLIENT_ID,
