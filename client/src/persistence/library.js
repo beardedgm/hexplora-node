@@ -8,8 +8,8 @@ import { log } from '../ui/debug.js';
 import { requestRedraw, resizeCanvases, showCanvases, hideCanvases } from '../canvas/renderer.js';
 import { resetView } from '../input/panZoom.js';
 import { applyState, blobToDataURL } from './importExport.js';
-import { pushHistory } from '../state/history.js';
-import { saveState } from './localStorage.js';
+import { initHistory, pushHistory } from '../state/history.js';
+import { saveState, flushSave } from './localStorage.js';
 import { getFullStateFromStore } from './serialization.js';
 import { generateHexGrid } from '../hex/math.js';
 
@@ -54,6 +54,8 @@ function fileToDataURL(file) {
  * Works with both data URLs and object URLs.
  */
 export async function loadMapFromBlob(imageUrl, state) {
+    initHistory(); // Clear undo/redo from previous map
+
     const loadingElement = document.getElementById('loading');
     if (loadingElement) loadingElement.style.display = 'flex';
     hideCanvases();
@@ -489,6 +491,7 @@ function createCloudMapItem(m, libraryModal) {
     loadBtn.className = 'btn btn-primary btn-sm';
     loadBtn.addEventListener('click', async () => {
         try {
+            await flushSave(); // Save current map before switching
             const fullMap = await mapsApi.fetchMap(m._id);
             store.update({
                 currentMapId: fullMap._id,
@@ -589,6 +592,7 @@ function createLocalMapItem(m, libraryModal) {
     loadBtn.className = 'btn btn-primary btn-sm';
     loadBtn.addEventListener('click', async () => {
         try {
+            await flushSave(); // Save current map before switching
             const fullMap = await localDb.getMap(m.id);
             if (!fullMap) {
                 showStatus('Map not found in local storage', 'error');

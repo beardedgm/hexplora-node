@@ -127,8 +127,12 @@ export function resetView() {
         panX: 0,
         panY: 0,
         selectedTokenIndex: -1,
+        editingTokenIndex: -1,
         isAddingToken: false,
         isRemovingToken: false,
+        isDraggingToken: false,
+        pendingTokenPos: null,
+        hoveredTokenIndex: -1,
     });
 
     mapContainer.classList.remove('token-add-mode');

@@ -18,7 +18,7 @@ import { setupTouchHandlers } from '../input/touch.js';
 import { setupKeyboardHandlers } from '../input/keyboard.js';
 import { setupTokenModal } from '../tokens/tokenModal.js';
 import { initHistory, updateUndoRedoButtons } from '../state/history.js';
-import { loadSavedState, cancelPendingSave } from '../persistence/localStorage.js';
+import { cancelPendingSave } from '../persistence/localStorage.js';
 import { handleExport, handleImport } from '../persistence/importExport.js';
 import { loadLastMap, loadMap, handleMapUpload, handleImportMap, showLibrary } from '../persistence/library.js';
 import { store } from '../state/index.js';
@@ -54,7 +54,8 @@ export default function MapPage() {
       setupDebug();
       setupTooltip(mapContainer);
       setupRenderer({ map: mapCanvas, grid: gridCanvas, token: tokenCanvas });
-      loadSavedState();
+      // State is loaded from the map's storage (cloud/IndexedDB) via loadLastMap(),
+      // not from the global localStorage cache, so each map's data stays self-contained.
       updateInputFields();
       setupPanZoom(canvas, mapContainer);
       setupMouseHandlers(canvas, mapContainer);

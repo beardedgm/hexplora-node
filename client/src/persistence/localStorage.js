@@ -45,6 +45,41 @@ export function cancelPendingSave() {
     }
 }
 
+/** Immediately persist the current map's state (cancel any pending debounce first). */
+export async function flushSave() {
+    cancelPendingSave();
+    const currentMapId = store.get('currentMapId');
+    if (!currentMapId) return;
+
+    const fullState = getFullStateFromStore();
+
+    // Also update the localStorage cache
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fullState));
+
+    try {
+        if (isCloudMapId(currentMapId) && isAuthenticated()) {
+            await mapsApi.updateMap(currentMapId, {
+                settings: fullState.settings,
+                view: fullState.view,
+                revealedHexes: fullState.revealedHexes,
+                tokens: fullState.tokens,
+            });
+            log('State flushed to server');
+        } else {
+            await updateMapState(currentMapId, {
+                settings: fullState.settings,
+                view: fullState.view,
+                revealedHexes: fullState.revealedHexes,
+                tokens: fullState.tokens,
+            });
+            log('State flushed to local storage');
+        }
+    } catch (err) {
+        console.error('Error flushing state:', err);
+        log('Error flushing state: ' + err.message);
+    }
+}
+
 export function saveState() {
     try {
         const fullState = getFullStateFromStore();
