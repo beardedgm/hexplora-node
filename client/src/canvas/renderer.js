@@ -31,15 +31,17 @@ export function drawMap() {
     const panX = store.get('panX');
     const panY = store.get('panY');
     const zoomLevel = store.get('zoomLevel');
+    const gridPad = store.get('gridPadding') || 0;
 
     // Clear all layers
     [mapCtx, gridCtx, tokenCtx].forEach(c =>
         c.clearRect(0, 0, mapCanvas.width, mapCanvas.height),
     );
 
-    // Apply pan/zoom transform
+    // Apply grid padding + pan/zoom transform
     [mapCtx, gridCtx, tokenCtx].forEach(c => {
         c.save();
+        c.translate(gridPad, gridPad);  // Shift world so edge hexes aren't clipped
         c.translate(panX, panY);
         c.scale(zoomLevel, zoomLevel);
     });

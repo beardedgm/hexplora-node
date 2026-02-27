@@ -54,13 +54,17 @@ export async function loadMapFromBlob(imageUrl, state) {
         img.onload = function () {
             clearTimeout(timeoutId);
             store.set('mapImage', img);
-            resizeCanvases(img.width, img.height);
+            applyState(state);  // Apply state first so hexSize is available for padding
+
+            // Add grid padding so edge hexes aren't clipped
+            const gridPad = store.get('hexSize');
+            store.set('gridPadding', gridPad);
+            resizeCanvases(img.width + 2 * gridPad, img.height + 2 * gridPad);
+
             if (loadingElement) loadingElement.style.display = 'none';
             showCanvases();
 
             resetView();
-
-            applyState(state);
             pushHistory();
             showStatus('Map loaded successfully!', 'success');
             resolve();
@@ -112,14 +116,19 @@ export function loadMap(mapUrl) {
         defaultMapAttempted = false;
 
         store.set('mapImage', img);
-        resizeCanvases(img.width, img.height);
+        generateHexGrid();
+
+        // Add grid padding so edge hexes aren't clipped
+        const gridPad = store.get('hexSize');
+        store.set('gridPadding', gridPad);
+        resizeCanvases(img.width + 2 * gridPad, img.height + 2 * gridPad);
+
         if (loadingElement) loadingElement.style.display = 'none';
         showCanvases();
 
         resetView();
         showStatus('Map loaded successfully!', 'success');
 
-        generateHexGrid();
         requestRedraw();
         pushHistory();
     };

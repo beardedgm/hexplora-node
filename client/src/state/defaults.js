@@ -57,6 +57,7 @@ export const DEFAULTS = {
 
     // Render
     needsRedraw: false,
+    gridPadding: 0,
 };
 
 export const ZOOM_MIN = 0.1;
