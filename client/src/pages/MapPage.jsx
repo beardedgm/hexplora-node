@@ -139,24 +139,24 @@ export default function MapPage() {
 
       {/* Button row — same HTML as original index.html */}
       <div className="button-row d-flex flex-wrap gap-2" id="button-row">
-        <button id="toggle-mode-btn" className="btn btn-primary btn-sm">Mode: Reveal</button>
-        <button id="add-token-btn" className="btn btn-info btn-sm">Add Token</button>
-        <button id="remove-token-btn" className="btn btn-warning btn-sm">Remove Token</button>
-        <button id="reset-view-btn" className="btn btn-info btn-sm">Reset View</button>
-        <button id="reset-map-btn" className="btn btn-danger btn-sm">Reset Fog</button>
-        <button id="clear-tokens-btn" className="btn btn-danger btn-sm">Clear Tokens</button>
-        <button id="debug-toggle" className="btn btn-secondary btn-sm">Toggle Debug</button>
-        <button id="export-btn" className="btn btn-success btn-sm d-none">Export State</button>
+        <button id="toggle-mode-btn" className="btn btn-primary btn-sm" title="Toggle Reveal/Hide mode (Ctrl+M)">Mode: Reveal</button>
+        <button id="add-token-btn" className="btn btn-info btn-sm" title="Add token to map (Ctrl+T)">Add Token</button>
+        <button id="remove-token-btn" className="btn btn-warning btn-sm" title="Remove a token from the map">Remove Token</button>
+        <button id="reset-view-btn" className="btn btn-info btn-sm" title="Reset pan and zoom to default">Reset View</button>
+        <button id="reset-map-btn" className="btn btn-danger btn-sm" title="Hide all revealed hexes">Reset Fog</button>
+        <button id="clear-tokens-btn" className="btn btn-danger btn-sm" title="Remove all tokens from the map">Clear Tokens</button>
+        <button id="debug-toggle" className="btn btn-secondary btn-sm" title="Toggle debug info panel">Toggle Debug</button>
+        <button id="export-btn" className="btn btn-success btn-sm d-none" title="Export map state as JSON (Ctrl+E)">Export State</button>
         <div className="file-input-container d-none">
-          <button className="btn btn-success btn-sm">Import State</button>
+          <button className="btn btn-success btn-sm" title="Import map state from JSON (Ctrl+I)">Import State</button>
           <input type="file" id="import-file" className="file-input" accept=".json" />
         </div>
         <div className="file-input-container">
-          <button className="btn btn-info btn-sm">Upload Map</button>
+          <button className="btn btn-info btn-sm" title="Upload a map image file">Upload Map</button>
           <input type="file" id="map-file-input" className="file-input" accept="image/*" />
         </div>
-        <button id="open-library-btn" className="btn btn-secondary btn-sm">Map Library</button>
-        <button id="screenshot-btn" className="btn btn-success btn-sm">Download Image</button>
+        <button id="open-library-btn" className="btn btn-secondary btn-sm" title="Open saved map library">Map Library</button>
+        <button id="screenshot-btn" className="btn btn-success btn-sm" title="Download map as PNG image">Download Image</button>
       </div>
 
       {/* Header / settings panels */}
@@ -243,8 +243,9 @@ export default function MapPage() {
         <span id="zoom-display">Zoom: 100%</span>
         <span id="coord-display">Hex: ---</span>
         <div id="status-indicator"></div>
-        <button id="undo-btn" className="btn btn-secondary btn-sm" disabled>Undo</button>
-        <button id="redo-btn" className="btn btn-secondary btn-sm" disabled>Redo</button>
+        <button id="undo-btn" className="btn btn-secondary btn-sm" title="Undo (Ctrl+Z)" disabled>Undo</button>
+        <button id="redo-btn" className="btn btn-secondary btn-sm" title="Redo (Ctrl+Y)" disabled>Redo</button>
+        <button id="help-btn" className="btn btn-outline-light btn-sm help-btn" title="Keyboard shortcuts (?)">?</button>
       </div>
 
       {/* Support bar */}
@@ -342,6 +343,58 @@ export default function MapPage() {
           </div>
           <div className="modal-footer">
             <button id="library-modal-close-btn" className="btn btn-secondary btn-sm">Close</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Help / keyboard shortcuts modal */}
+      <div id="help-modal" className="modal">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h2>Keyboard Shortcuts</h2>
+            <span className="close" id="help-modal-close">&times;</span>
+          </div>
+          <div className="modal-body">
+            <table className="help-shortcuts-table">
+              <tbody>
+                <tr><td className="help-key">Ctrl/Cmd + M</td><td>Toggle Reveal / Hide mode</td></tr>
+                <tr><td className="help-key">Ctrl/Cmd + T</td><td>Toggle Add Token mode</td></tr>
+                <tr><td className="help-key">Ctrl/Cmd + E</td><td>Export map state</td></tr>
+                <tr><td className="help-key">Ctrl/Cmd + I</td><td>Import map state</td></tr>
+                <tr><td className="help-key">Ctrl/Cmd + Z</td><td>Undo</td></tr>
+                <tr><td className="help-key">Ctrl/Cmd + Shift + Z</td><td>Redo</td></tr>
+                <tr><td className="help-key">Ctrl/Cmd + Y</td><td>Redo</td></tr>
+                <tr><td className="help-key">Delete / Backspace</td><td>Remove selected token</td></tr>
+                <tr><td className="help-key">Escape</td><td>Cancel / deselect</td></tr>
+                <tr><td className="help-key">Arrow Keys</td><td>Pan map</td></tr>
+                <tr><td className="help-key">Shift + Arrow Keys</td><td>Pan map (fast)</td></tr>
+                <tr><td className="help-key">+ / =</td><td>Zoom in</td></tr>
+                <tr><td className="help-key">-</td><td>Zoom out</td></tr>
+                <tr><td className="help-key">?</td><td>Toggle this help</td></tr>
+              </tbody>
+            </table>
+            <div className="help-section-title">Mouse</div>
+            <table className="help-shortcuts-table">
+              <tbody>
+                <tr><td className="help-key">Left Click</td><td>Reveal/hide hex, select token</td></tr>
+                <tr><td className="help-key">Double Click</td><td>Edit token</td></tr>
+                <tr><td className="help-key">Right Click / Middle Click</td><td>Pan map</td></tr>
+                <tr><td className="help-key">Ctrl/Cmd + Left Click</td><td>Pan map</td></tr>
+                <tr><td className="help-key">Scroll Wheel</td><td>Zoom in / out</td></tr>
+              </tbody>
+            </table>
+            <div className="help-section-title">Touch</div>
+            <table className="help-shortcuts-table">
+              <tbody>
+                <tr><td className="help-key">Tap</td><td>Reveal/hide hex, select token</td></tr>
+                <tr><td className="help-key">Double Tap</td><td>Edit token</td></tr>
+                <tr><td className="help-key">One Finger Drag</td><td>Pan map / drag token</td></tr>
+                <tr><td className="help-key">Pinch</td><td>Zoom in / out</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="modal-footer">
+            <button id="help-modal-close-btn" className="btn btn-secondary btn-sm">Close</button>
           </div>
         </div>
       </div>

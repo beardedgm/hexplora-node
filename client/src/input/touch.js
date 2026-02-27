@@ -11,6 +11,8 @@ import { addTokenAtPosition, handleCanvasDoubleClick } from '../tokens/tokenModa
 
 const TAP_TIME_LIMIT = 300;
 const TAP_MOVE_LIMIT = 5;
+const TOOLTIP_DELAY = 600;
+const PINCH_LERP = 0.35;
 let lastTapTime = 0;
 let lastTapX = 0;
 let lastTapY = 0;
@@ -68,7 +70,7 @@ function handleTouchStart(event) {
                     showTooltipAt(touch.clientX, touch.clientY, notes);
                     setTooltipTimer(null);
                 }
-            }, 500);
+            }, TOOLTIP_DELAY);
             setTooltipTimer(newTimer);
         }
     } else if (event.touches.length >= 2) {
@@ -110,7 +112,9 @@ function handleTouchMove(event) {
         const pinchStartDist = store.get('pinchStartDist');
         const panX = store.get('panX');
         const panY = store.get('panY');
-        const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchStartZoom * (dist / pinchStartDist)));
+        const targetZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchStartZoom * (dist / pinchStartDist)));
+        // Lerp toward target zoom for smoother feel
+        const newZoom = prevZoom + (targetZoom - prevZoom) * PINCH_LERP;
         const midX = (t1.clientX + t2.clientX) / 2;
         const midY = (t1.clientY + t2.clientY) / 2;
         const { x: mx, y: my } = getCanvasCoords({ clientX: midX, clientY: midY }, canvas);

@@ -69,10 +69,23 @@ export function setupModals() {
     if (libraryModalClose) addListener(libraryModalClose, 'click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
     if (libraryModalCloseBtn) addListener(libraryModalCloseBtn, 'click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
+    // Help modal
+    const helpModal = getEl('help-modal');
+    const helpModalClose = getEl('help-modal-close');
+    const helpModalCloseBtn = getEl('help-modal-close-btn');
+    const helpBtn = getEl('help-btn');
+
+    if (helpModalClose) addListener(helpModalClose, 'click', () => { if (helpModal) helpModal.style.display = 'none'; });
+    if (helpModalCloseBtn) addListener(helpModalCloseBtn, 'click', () => { if (helpModal) helpModal.style.display = 'none'; });
+    if (helpBtn) addListener(helpBtn, 'click', () => {
+        if (helpModal) helpModal.style.display = helpModal.style.display === 'block' ? 'none' : 'block';
+    });
+
     // Close on outside click
     addListener(window, 'click', (event) => {
         if (event.target === exportModal) exportModal.style.display = 'none';
         if (event.target === tokenLabelModal) closeTokenLabelModal();
         if (event.target === libraryModal) libraryModal.style.display = 'none';
+        if (event.target === helpModal) helpModal.style.display = 'none';
     });
 }

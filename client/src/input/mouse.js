@@ -13,6 +13,8 @@ import { saveState } from '../persistence/localStorage.js';
 import { removeTokenFromIndex } from '../hex/math.js';
 import { addTokenAtPosition, handleCanvasDoubleClick } from '../tokens/tokenModal.js';
 
+const TOOLTIP_DELAY = 600;
+
 let canvas = null;
 let mapContainer = null;
 
@@ -159,7 +161,7 @@ export function handleMouseMove(event) {
                         showTooltipAt(event.clientX, event.clientY, notes);
                         setTooltipTimer(null);
                     }
-                }, 1000);
+                }, TOOLTIP_DELAY);
                 setTooltipTimer(newTimer);
             }
         } else {
