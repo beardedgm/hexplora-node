@@ -29,6 +29,11 @@ function isCloudEnabled() {
     return isAuthenticated() && isPatron();
 }
 
+/** MongoDB ObjectIds are 24-char hex; local UUIDs have dashes */
+function isCloudMapId(id) {
+    return id && /^[a-f0-9]{24}$/.test(id);
+}
+
 let isMapLoading = false;
 let defaultMapAttempted = false;
 
@@ -173,8 +178,8 @@ export async function loadLastMap() {
         const lastId = localStorage.getItem('currentMapId');
         if (!lastId) return false;
 
-        if (isCloudEnabled()) {
-            // Cloud path — fetch from API
+        // Cloud map — authenticated users (patron or not) can load existing cloud maps
+        if (isCloudMapId(lastId) && isAuthenticated()) {
             const entry = await mapsApi.fetchMap(lastId);
             if (!entry) return false;
 
@@ -190,19 +195,19 @@ export async function loadLastMap() {
                 tokens: entry.tokens,
             });
             return true;
-        } else {
-            // Local path — fetch from IndexedDB
-            const entry = await localDb.getMap(lastId);
-            if (!entry) return false;
-
-            store.update({
-                currentMapId: entry.id,
-                currentMapName: entry.name,
-            });
-
-            await loadMapFromBlob(entry.blob, entry.state);
-            return true;
         }
+
+        // Local map — fetch from IndexedDB
+        const entry = await localDb.getMap(lastId);
+        if (!entry) return false;
+
+        store.update({
+            currentMapId: entry.id,
+            currentMapName: entry.name,
+        });
+
+        await loadMapFromBlob(entry.blob, entry.state);
+        return true;
     } catch (error) {
         console.error('Error loading last map:', error);
         log('Error loading last map: ' + error.message);
@@ -364,7 +369,7 @@ export async function showLibrary() {
     libraryList.innerHTML = '';
 
     if (isCloudEnabled()) {
-        // Cloud library — fetch from API
+        // Full cloud library — patron
         let maps;
         try {
             maps = await mapsApi.fetchMaps();
@@ -374,14 +379,72 @@ export async function showLibrary() {
             return;
         }
 
-        updateStorageInfo(maps.length);
+        updateStorageInfo(maps.length, 0);
         maps.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
         for (const m of maps) {
             libraryList.appendChild(createCloudMapItem(m, libraryModal));
         }
+    } else if (isAuthenticated()) {
+        // Authenticated non-patron — show locked cloud maps + local maps
+        let cloudMaps = [];
+        try {
+            cloudMaps = await mapsApi.fetchMaps();
+        } catch (err) {
+            // API might fail for unverified users, just skip cloud
+            log('Could not fetch cloud maps: ' + err.message);
+        }
+
+        let localMaps = [];
+        try {
+            localMaps = await localDb.getAllMaps();
+        } catch (err) {
+            log('Could not fetch local maps: ' + err.message);
+        }
+
+        updateStorageInfo(cloudMaps.length, localMaps.length);
+
+        // Show cloud maps (locked — load one at a time, no create)
+        if (cloudMaps.length > 0) {
+            cloudMaps.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            const cloudHeader = document.createElement('li');
+            cloudHeader.innerHTML = '<strong>Cloud Maps</strong> <span style="color:#a0aec0; font-size:0.8rem;">(1 active at a time — subscribe for full access)</span>';
+            cloudHeader.style.padding = '0.5rem 0';
+            cloudHeader.style.borderBottom = '1px solid #4a5568';
+            libraryList.appendChild(cloudHeader);
+
+            for (const m of cloudMaps) {
+                libraryList.appendChild(createCloudMapItem(m, libraryModal));
+            }
+        }
+
+        // Show local maps
+        if (localMaps.length > 0 || cloudMaps.length === 0) {
+            if (cloudMaps.length > 0) {
+                const localHeader = document.createElement('li');
+                localHeader.innerHTML = '<strong>Local Maps</strong>';
+                localHeader.style.padding = '0.5rem 0';
+                localHeader.style.borderBottom = '1px solid #4a5568';
+                localHeader.style.marginTop = '0.5rem';
+                libraryList.appendChild(localHeader);
+            }
+
+            localMaps.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+            for (const m of localMaps) {
+                libraryList.appendChild(createLocalMapItem(m, libraryModal));
+            }
+        }
+
+        if (cloudMaps.length === 0 && localMaps.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No maps saved yet. Upload a map to get started!';
+            li.style.color = '#a0aec0';
+            li.style.textAlign = 'center';
+            li.style.padding = '1rem 0';
+            libraryList.appendChild(li);
+        }
     } else {
-        // Local library — fetch from IndexedDB
+        // Not logged in — local only
         let maps;
         try {
             maps = await localDb.getAllMaps();
@@ -391,7 +454,7 @@ export async function showLibrary() {
             return;
         }
 
-        updateStorageInfo(maps.length);
+        updateStorageInfo(0, maps.length);
         maps.sort((a, b) => (b.updated || 0) - (a.updated || 0));
 
         for (const m of maps) {
@@ -619,17 +682,17 @@ function downloadJson(obj, name) {
     link.remove();
 }
 
-function updateStorageInfo(mapCount) {
+function updateStorageInfo(cloudCount, localCount) {
     const storageInfo = document.getElementById('storage-info');
     if (!storageInfo) return;
 
     if (isCloudEnabled()) {
         const user = useAuthStore.getState().user;
         const limit = user?.mapLimit || 25;
-        storageInfo.textContent = `Cloud Storage: ${mapCount} / ${limit} maps`;
+        storageInfo.textContent = `Cloud Storage: ${cloudCount} / ${limit} maps`;
+    } else if (isAuthenticated() && cloudCount > 0) {
+        storageInfo.textContent = `${cloudCount} cloud map${cloudCount !== 1 ? 's' : ''} (1 active) · Local: ${localCount} / 1 — Subscribe to unlock all`;
     } else {
-        let text = `Local Storage: ${mapCount} / 1 map`;
-        text += ' — Become a Member for 25 cloud maps';
-        storageInfo.textContent = text;
+        storageInfo.textContent = `Local Storage: ${localCount} / 1 map — Become a Member for 25 cloud maps`;
     }
 }

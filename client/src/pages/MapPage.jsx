@@ -21,6 +21,7 @@ import { initHistory, updateUndoRedoButtons } from '../state/history.js';
 import { loadSavedState } from '../persistence/localStorage.js';
 import { handleExport, handleImport } from '../persistence/importExport.js';
 import { loadLastMap, loadMap, handleMapUpload, handleImportMap, showLibrary } from '../persistence/library.js';
+import { store } from '../state/index.js';
 import { debounce } from '../util/debounce.js';
 import { cleanupEventListeners } from '../util/dom.js';
 
@@ -28,6 +29,14 @@ export default function MapPage() {
   const initialized = useRef(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+
+  const handleLogout = () => {
+    logout();
+    // Clear map state and reset to default
+    store.update({ currentMapId: null, currentMapName: '', mapImage: null });
+    localStorage.removeItem('currentMapId');
+    loadMap(); // loads default placeholder
+  };
 
   useEffect(() => {
     if (initialized.current) return;
@@ -125,7 +134,7 @@ export default function MapPage() {
             {user.isPatron && (
               <span className="badge bg-success">Member</span>
             )}
-            <button className="btn btn-outline-light btn-sm" onClick={logout}>
+            <button className="btn btn-outline-light btn-sm" onClick={handleLogout}>
               Logout
             </button>
           </>

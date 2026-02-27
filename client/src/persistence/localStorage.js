@@ -3,17 +3,21 @@ import { STORAGE_KEY } from '../state/defaults.js';
 import { applySettingsToStore, applyTokensToStore, getFullStateFromStore } from './serialization.js';
 import * as mapsApi from '../services/maps.js';
 import { updateMapState } from './db.js';
-import useAuthStore from '../store/useAuthStore.js';
 import { log } from '../ui/debug.js';
 
 // Debounce timer for persistent saves (API or IndexedDB)
 let persistSaveTimer = null;
 const PERSIST_SAVE_DELAY = 2000; // 2 seconds
 
-function isCloudEnabled() {
-    const token = localStorage.getItem('hexplora_token');
-    const user = useAuthStore.getState().user;
-    return !!token && user?.isPatron === true;
+const TOKEN_KEY = 'hexplora_token';
+
+function isAuthenticated() {
+    return !!localStorage.getItem(TOKEN_KEY);
+}
+
+/** MongoDB ObjectIds are 24-char hex; local UUIDs have dashes */
+function isCloudMapId(id) {
+    return id && /^[a-f0-9]{24}$/.test(id);
 }
 
 export function loadSavedState() {
@@ -47,8 +51,8 @@ export function saveState() {
             if (persistSaveTimer) clearTimeout(persistSaveTimer);
             persistSaveTimer = setTimeout(async () => {
                 try {
-                    if (isCloudEnabled()) {
-                        // Cloud path — save to API
+                    if (isCloudMapId(currentMapId) && isAuthenticated()) {
+                        // Cloud map — save to API (works for patrons and non-patrons with existing maps)
                         await mapsApi.updateMap(currentMapId, {
                             settings: fullState.settings,
                             view: fullState.view,
@@ -57,7 +61,7 @@ export function saveState() {
                         });
                         log('State saved to server');
                     } else {
-                        // Local path — save to IndexedDB
+                        // Local map — save to IndexedDB
                         await updateMapState(currentMapId, {
                             settings: fullState.settings,
                             view: fullState.view,
