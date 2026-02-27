@@ -38,6 +38,13 @@ export function loadSavedState() {
     }
 }
 
+export function cancelPendingSave() {
+    if (persistSaveTimer) {
+        clearTimeout(persistSaveTimer);
+        persistSaveTimer = null;
+    }
+}
+
 export function saveState() {
     try {
         const fullState = getFullStateFromStore();

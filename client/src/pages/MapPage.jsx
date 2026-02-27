@@ -18,7 +18,7 @@ import { setupTouchHandlers } from '../input/touch.js';
 import { setupKeyboardHandlers } from '../input/keyboard.js';
 import { setupTokenModal } from '../tokens/tokenModal.js';
 import { initHistory, updateUndoRedoButtons } from '../state/history.js';
-import { loadSavedState } from '../persistence/localStorage.js';
+import { loadSavedState, cancelPendingSave } from '../persistence/localStorage.js';
 import { handleExport, handleImport } from '../persistence/importExport.js';
 import { loadLastMap, loadMap, handleMapUpload, handleImportMap, showLibrary } from '../persistence/library.js';
 import { store } from '../state/index.js';
@@ -31,6 +31,7 @@ export default function MapPage() {
   const logout = useAuthStore((s) => s.logout);
 
   const handleLogout = () => {
+    cancelPendingSave(); // Cancel any debounced save in flight
     logout();
     // Clear map state and reset to default
     store.update({ currentMapId: null, currentMapName: '', mapImage: null });
