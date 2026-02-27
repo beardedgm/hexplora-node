@@ -19,7 +19,6 @@ import { setupKeyboardHandlers } from '../input/keyboard.js';
 import { setupTokenModal } from '../tokens/tokenModal.js';
 import { initHistory, updateUndoRedoButtons } from '../state/history.js';
 import { cancelPendingSave } from '../persistence/localStorage.js';
-import { handleExport, handleImport } from '../persistence/importExport.js';
 import { loadLastMap, loadMap, handleMapUpload, handleImportMap, showLibrary } from '../persistence/library.js';
 import { store } from '../state/index.js';
 import { debounce } from '../util/debounce.js';
@@ -67,22 +66,16 @@ export default function MapPage() {
       setupInputFields();
       initHistory();
 
-      const importFile = document.getElementById('import-file');
       setupKeyboardHandlers({
-        handleExport,
-        importFile,
         toggleMode,
         toggleAddTokenMode,
       });
 
-      if (importFile) importFile.addEventListener('change', handleImport);
       const mapFileInput = document.getElementById('map-file-input');
       if (mapFileInput) mapFileInput.addEventListener('change', handleMapUpload);
       const importMapFile = document.getElementById('import-map-file');
       if (importMapFile) importMapFile.addEventListener('change', handleImportMap);
 
-      const exportBtn = document.getElementById('export-btn');
-      if (exportBtn) exportBtn.addEventListener('click', handleExport);
       const openLibraryBtn = document.getElementById('open-library-btn');
       if (openLibraryBtn) openLibraryBtn.addEventListener('click', showLibrary);
       const screenshotBtn = document.getElementById('screenshot-btn');
@@ -157,11 +150,6 @@ export default function MapPage() {
         <button id="reset-map-btn" className="btn btn-danger btn-sm" title="Hide all revealed hexes">Reset Fog</button>
         <button id="clear-tokens-btn" className="btn btn-danger btn-sm" title="Remove all tokens from the map">Clear Tokens</button>
         <button id="debug-toggle" className="btn btn-secondary btn-sm" title="Toggle debug info panel">Toggle Debug</button>
-        <button id="export-btn" className="btn btn-success btn-sm d-none" title="Export map state as JSON (Ctrl+E)">Export State</button>
-        <div className="file-input-container d-none">
-          <button className="btn btn-success btn-sm" title="Import map state from JSON (Ctrl+I)">Import State</button>
-          <input type="file" id="import-file" className="file-input" accept=".json" />
-        </div>
         <div className="file-input-container">
           <button className="btn btn-info btn-sm" title="Upload a map image file">Upload Map</button>
           <input type="file" id="map-file-input" className="file-input" accept="image/*" />
@@ -276,24 +264,6 @@ export default function MapPage() {
 
       <div id="debug-info"></div>
 
-      {/* Export modal */}
-      <div id="export-modal" className="modal">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h2>Export Map State</h2>
-            <span className="close" id="export-modal-close">&times;</span>
-          </div>
-          <div className="modal-body">
-            <p>Copy the following JSON to save your map state:</p>
-            <textarea id="export-json" readOnly></textarea>
-          </div>
-          <div className="modal-footer">
-            <button id="copy-json-btn" className="btn btn-primary btn-sm">Copy to Clipboard</button>
-            <button id="download-json-btn" className="btn btn-success btn-sm">Download as File</button>
-          </div>
-        </div>
-      </div>
-
       {/* Token label modal */}
       <div id="token-label-modal" className="modal">
         <div className="modal-content">
@@ -375,8 +345,6 @@ export default function MapPage() {
               <tbody>
                 <tr><td className="help-key">Ctrl/Cmd + M</td><td>Toggle Reveal / Hide mode</td></tr>
                 <tr><td className="help-key">Ctrl/Cmd + T</td><td>Toggle Add Token mode</td></tr>
-                <tr><td className="help-key">Ctrl/Cmd + E</td><td>Export map state</td></tr>
-                <tr><td className="help-key">Ctrl/Cmd + I</td><td>Import map state</td></tr>
                 <tr><td className="help-key">Ctrl/Cmd + Z</td><td>Undo</td></tr>
                 <tr><td className="help-key">Ctrl/Cmd + Shift + Z</td><td>Redo</td></tr>
                 <tr><td className="help-key">Ctrl/Cmd + Y</td><td>Redo</td></tr>

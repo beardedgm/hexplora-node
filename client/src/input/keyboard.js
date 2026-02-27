@@ -11,14 +11,10 @@ import { saveState } from '../persistence/localStorage.js';
 const PAN_STEP = 50;
 const PAN_STEP_FAST = 150;
 
-let handleExportFn = null;
-let importFileEl = null;
 let toggleModeFn = null;
 let toggleAddTokenModeFn = null;
 
 export function setupKeyboardHandlers(opts) {
-    handleExportFn = opts.handleExport;
-    importFileEl = opts.importFile;
     toggleModeFn = opts.toggleMode;
     toggleAddTokenModeFn = opts.toggleAddTokenMode;
 
@@ -40,18 +36,6 @@ function handleKeyDown(event) {
     if (isModKey(event) && event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
         event.preventDefault();
         redo();
-        return;
-    }
-
-    if (isModKey(event) && event.key === 'e') {
-        event.preventDefault();
-        if (handleExportFn) handleExportFn();
-        return;
-    }
-
-    if (isModKey(event) && event.key === 'i') {
-        event.preventDefault();
-        if (importFileEl) importFileEl.click();
         return;
     }
 

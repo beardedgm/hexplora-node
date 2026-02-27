@@ -30,8 +30,6 @@ import { setupTokenModal } from './tokens/tokenModal.js';
 import { initHistory, updateUndoRedoButtons } from './state/history.js';
 
 // Persistence
-import { loadSavedState } from './persistence/localStorage.js';
-import { handleExport, handleImport } from './persistence/importExport.js';
 import { loadLastMap, loadMap, handleMapUpload, handleImportMap, showLibrary } from './persistence/library.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -50,8 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize renderer
     setupRenderer({ map: mapCanvas, grid: gridCanvas, token: tokenCanvas });
 
-    // Load persisted state into the store
-    loadSavedState();
+    // State is loaded from the map's storage (cloud/IndexedDB) via loadLastMap(),
+    // not from the global localStorage cache, so each map's data stays self-contained.
     updateInputFields();
 
     // Initialize subsystems
@@ -66,24 +64,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     initHistory();
 
     // Keyboard shortcuts
-    const importFile = getEl('import-file');
     setupKeyboardHandlers({
-        handleExport,
-        importFile,
         toggleMode,
         toggleAddTokenMode,
     });
 
     // File handlers
-    if (importFile) addListener(importFile, 'change', handleImport);
     const mapFileInput = getEl('map-file-input');
     if (mapFileInput) addListener(mapFileInput, 'change', handleMapUpload);
     const importMapFile = getEl('import-map-file');
     if (importMapFile) addListener(importMapFile, 'change', handleImportMap);
 
     // Button handlers
-    const exportBtn = getEl('export-btn');
-    if (exportBtn) addListener(exportBtn, 'click', handleExport);
     const openLibraryBtn = getEl('open-library-btn');
     if (openLibraryBtn) addListener(openLibraryBtn, 'click', showLibrary);
     const screenshotBtn = getEl('screenshot-btn');
