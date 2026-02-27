@@ -252,7 +252,7 @@ export default function MapPage() {
         <a href="https://discord.gg/emVv2dNvs9" target="_blank" rel="noopener" title="Join us on Discord">
           <i className="bi bi-discord icon"></i>
         </a>
-        <a href="https://www.patreon.com/BeardedGM" target="_blank" rel="noopener" title="Support us on Patreon">
+        <a href="https://www.patreon.com/altershell" target="_blank" rel="noopener" title="Support us on Patreon">
           <i className="bi bi-p-square-fill icon"></i>
         </a>
         <a href="https://coff.ee/beardedgm" target="_blank" rel="noopener" title="Buy me a coffee">
