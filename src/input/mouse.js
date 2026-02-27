@@ -153,9 +153,10 @@ export function handleMouseMove(event) {
             hideTooltip();
             setHoveredTokenIndex(tokenIdx);
             if (tokens[tokenIdx].notes) {
+                const notes = tokens[tokenIdx].notes;
                 const newTimer = setTimeout(() => {
                     if (getHoveredTokenIndex() === tokenIdx) {
-                        showTooltipAt(event.clientX, event.clientY, tokens[tokenIdx].notes);
+                        showTooltipAt(event.clientX, event.clientY, notes);
                         setTooltipTimer(null);
                     }
                 }, 1000);

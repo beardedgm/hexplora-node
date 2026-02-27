@@ -46,8 +46,8 @@ export function drawMap() {
 
     // Draw each layer
     drawMapLayer(mapCtx);
-    drawGridLayer(gridCtx, mapCanvas.width);
-    drawTokenLayer(tokenCtx, mapCanvas.width);
+    drawGridLayer(gridCtx, mapCanvas.width, mapCanvas.height);
+    drawTokenLayer(tokenCtx, mapCanvas.width, mapCanvas.height);
 
     // Restore transform
     [mapCtx, gridCtx, tokenCtx].forEach(c => c.restore());
@@ -58,7 +58,7 @@ export function drawMap() {
 function renderLoop() {
     if (store.get('needsRedraw')) {
         drawMap();
-        store._state.needsRedraw = false; // Direct set to avoid triggering listeners
+        store.set('needsRedraw', false);
     }
     if (document.visibilityState === 'visible') {
         frameId = requestAnimationFrame(renderLoop);

@@ -31,7 +31,7 @@ function drawHex(ctx, hex, debugMode) {
     }
 }
 
-export function drawGridLayer(ctx, canvasWidth) {
+export function drawGridLayer(ctx, canvasWidth, canvasHeight) {
     const hexes = store.get('hexes');
     const hexSize = store.get('hexSize');
     const gridColor = store.get('gridColor');
@@ -47,7 +47,7 @@ export function drawGridLayer(ctx, canvasWidth) {
     const viewLeft = -panX / zoomLevel;
     const viewTop = -panY / zoomLevel;
     const viewRight = viewLeft + canvasWidth / zoomLevel;
-    const viewBottom = viewTop + canvasWidth / zoomLevel;
+    const viewBottom = viewTop + canvasHeight / zoomLevel;
 
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = gridThickness;

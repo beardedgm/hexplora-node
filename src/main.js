@@ -2,6 +2,7 @@ import './style.css';
 
 import { store } from './state/index.js';
 import { getEl, addListener, cleanupEventListeners } from './util/dom.js';
+import { debounce } from './util/debounce.js';
 
 // UI setup
 import { setupStatus } from './ui/status.js';
@@ -96,7 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (resetViewBtn) addListener(resetViewBtn, 'click', resetView);
 
     // Window resize
-    addListener(window, 'resize', () => requestRedraw());
+    addListener(window, 'resize', debounce(() => requestRedraw(), 150));
 
     // Visibility change
     addListener(document, 'visibilitychange', handleVisibilityChange);

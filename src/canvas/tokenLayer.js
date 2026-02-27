@@ -1,7 +1,7 @@
 import { store } from '../state/index.js';
 import { hexToRgb } from '../util/color.js';
 
-export function drawTokenLayer(ctx, canvasWidth) {
+export function drawTokenLayer(ctx, canvasWidth, canvasHeight) {
     const tokens = store.get('tokens');
     const hexSize = store.get('hexSize');
     const tokenColor = store.get('tokenColor');
@@ -18,7 +18,7 @@ export function drawTokenLayer(ctx, canvasWidth) {
     const viewLeft = -panX / zoomLevel;
     const viewTop = -panY / zoomLevel;
     const viewRight = viewLeft + canvasWidth / zoomLevel;
-    const viewBottom = viewTop + canvasWidth / zoomLevel;
+    const viewBottom = viewTop + canvasHeight / zoomLevel;
 
     // Draw tokens in z-index order
     const tokensToDraw = [...tokens].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));

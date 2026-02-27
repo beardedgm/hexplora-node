@@ -59,6 +59,9 @@ export const DEFAULTS = {
     needsRedraw: false,
 };
 
+export const ZOOM_MIN = 0.1;
+export const ZOOM_MAX = 5;
+
 export const STORAGE_KEY = 'pointyTopHexMapState';
 export const MAX_LIBRARY_INFO_LENGTH = 18;
 

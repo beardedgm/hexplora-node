@@ -176,6 +176,7 @@ input[type="range"] {
 /* Map Container */
 .map-container {
     flex: 1; /* Take remaining vertical space */
+    margin-top: 45px; /* Clear the fixed button row */
     overflow: hidden; /* Crucial for pan/zoom */
     position: relative; /* For loading overlay */
     background-color: #1a202c; /* Ensure bg color */

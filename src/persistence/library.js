@@ -8,6 +8,7 @@ import { resetView } from '../input/panZoom.js';
 import { applyState, blobToDataURL, dataURLToBlob } from './importExport.js';
 import { pushHistory } from '../state/history.js';
 import { saveState } from './localStorage.js';
+import { getFullStateFromStore } from './serialization.js';
 import { generateHexGrid } from '../hex/math.js';
 
 let isMapLoading = false;
@@ -159,29 +160,7 @@ export async function handleMapUpload(event) {
         return;
     }
 
-    const state = {
-        settings: {
-            hexSize: store.get('hexSize'),
-            offsetX: store.get('offsetX'),
-            offsetY: store.get('offsetY'),
-            columnCount: store.get('columnCount'),
-            rowCount: store.get('rowCount'),
-            orientation: store.get('orientation'),
-            mapScale: store.get('mapScale'),
-            fogColor: store.get('fogColor'),
-            fogOpacity: store.get('fogOpacity'),
-            gridColor: store.get('gridColor'),
-            gridThickness: store.get('gridThickness'),
-            tokenColor: store.get('tokenColor'),
-        },
-        view: {
-            zoomLevel: store.get('zoomLevel'),
-            panX: store.get('panX'),
-            panY: store.get('panY'),
-        },
-        tokens: store.get('tokens'),
-        revealedHexes: store.get('revealedHexes'),
-    };
+    const state = getFullStateFromStore();
 
     let url;
     try {

@@ -1,4 +1,5 @@
 import { store } from '../state/index.js';
+import { ZOOM_MIN, ZOOM_MAX } from '../state/defaults.js';
 import { getCanvasCoords } from '../canvas/coordinates.js';
 import { findTokenAtPosition } from '../hex/math.js';
 import { updateTokenInIndex } from '../hex/math.js';
@@ -25,7 +26,7 @@ export function handleZoom(event) {
     const panY = store.get('panY');
 
     const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.1, Math.min(5, zoomLevel * zoomFactor));
+    const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomLevel * zoomFactor));
 
     const currentMouseInWorldX = (mouseX - panX) / zoomLevel;
     const currentMouseInWorldY = (mouseY - panY) / zoomLevel;

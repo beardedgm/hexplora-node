@@ -1,4 +1,5 @@
 import { store } from '../state/index.js';
+import { ZOOM_MIN, ZOOM_MAX } from '../state/defaults.js';
 import { getCanvasCoords } from '../canvas/coordinates.js';
 import { findTokenAtPosition } from '../hex/math.js';
 import { requestRedraw } from '../canvas/renderer.js';
@@ -55,6 +56,7 @@ function handleTouchStart(event) {
         const tokenIdx = findTokenAtPosition(x, y);
         const tokens = store.get('tokens');
         if (tokenIdx !== -1 && tokens[tokenIdx].notes) {
+            const notes = tokens[tokenIdx].notes;
             setHoveredTokenIndex(tokenIdx);
             const timer = getTooltipTimer();
             if (timer) {
@@ -63,7 +65,7 @@ function handleTouchStart(event) {
             }
             const newTimer = setTimeout(() => {
                 if (getHoveredTokenIndex() === tokenIdx) {
-                    showTooltipAt(touch.clientX, touch.clientY, tokens[tokenIdx].notes);
+                    showTooltipAt(touch.clientX, touch.clientY, notes);
                     setTooltipTimer(null);
                 }
             }, 500);
@@ -108,7 +110,7 @@ function handleTouchMove(event) {
         const pinchStartDist = store.get('pinchStartDist');
         const panX = store.get('panX');
         const panY = store.get('panY');
-        const newZoom = Math.max(0.1, Math.min(5, pinchStartZoom * (dist / pinchStartDist)));
+        const newZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pinchStartZoom * (dist / pinchStartDist)));
         const midX = (t1.clientX + t2.clientX) / 2;
         const midY = (t1.clientY + t2.clientY) / 2;
         const { x: mx, y: my } = getCanvasCoords({ clientX: midX, clientY: midY }, canvas);
