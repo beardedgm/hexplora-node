@@ -11,6 +11,12 @@ import { saveState } from './localStorage.js';
 import { getFullStateFromStore } from './serialization.js';
 import { generateHexGrid } from '../hex/math.js';
 
+const TOKEN_KEY = 'hexplora_token';
+
+function isAuthenticated() {
+    return !!localStorage.getItem(TOKEN_KEY);
+}
+
 let isMapLoading = false;
 let defaultMapAttempted = false;
 
@@ -143,6 +149,7 @@ export function loadMap(mapUrl) {
 
 export async function loadLastMap() {
     try {
+        if (!isAuthenticated()) return false;
         const lastId = localStorage.getItem('currentMapId');
         if (!lastId) return false;
 
@@ -175,35 +182,42 @@ export async function handleMapUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const name = prompt('Enter map name:', file.name);
-    if (!name) {
-        event.target.value = null;
-        return;
-    }
-
     try {
-        // Convert file to base64 data URL for API storage
+        // Convert file to base64 data URL
         const mapImageData = await fileToDataURL(file);
-        const state = getFullStateFromStore();
 
-        // Save to API
-        const saved = await mapsApi.createMap({
-            name,
-            mapImageData,
-            settings: state.settings,
-            view: state.view,
-            revealedHexes: state.revealedHexes,
-            tokens: state.tokens,
-        });
+        if (isAuthenticated()) {
+            const name = prompt('Enter map name:', file.name);
+            if (!name) {
+                event.target.value = null;
+                return;
+            }
 
-        store.update({
-            currentMapId: saved._id,
-            currentMapName: name,
-        });
-        localStorage.setItem('currentMapId', saved._id);
+            const state = getFullStateFromStore();
 
-        // Load the map from the data URL
-        await loadMapFromBlob(mapImageData, state);
+            // Save to API
+            const saved = await mapsApi.createMap({
+                name,
+                mapImageData,
+                settings: state.settings,
+                view: state.view,
+                revealedHexes: state.revealedHexes,
+                tokens: state.tokens,
+            });
+
+            store.update({
+                currentMapId: saved._id,
+                currentMapName: name,
+            });
+            localStorage.setItem('currentMapId', saved._id);
+
+            // Load the map from the data URL
+            await loadMapFromBlob(mapImageData, state);
+        } else {
+            // Not signed in — load map locally (no cloud save)
+            loadMap(mapImageData);
+            showStatus('Map loaded locally. Sign in to save maps to the cloud.', 'info');
+        }
     } catch (err) {
         console.error('Map upload error:', err);
         if (err.response?.status === 403) {
@@ -219,6 +233,12 @@ export async function handleMapUpload(event) {
 export async function handleImportMap(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    if (!isAuthenticated()) {
+        showStatus('Sign in to import maps to your library.', 'info');
+        event.target.value = null;
+        return;
+    }
 
     try {
         const text = await file.text();
@@ -254,6 +274,17 @@ export async function showLibrary() {
     if (!libraryList) return;
 
     libraryList.innerHTML = '';
+
+    if (!isAuthenticated()) {
+        const li = document.createElement('li');
+        li.textContent = 'Sign in to access your saved maps.';
+        li.style.color = '#a0aec0';
+        li.style.textAlign = 'center';
+        li.style.padding = '1rem 0';
+        libraryList.appendChild(li);
+        if (libraryModal) libraryModal.style.display = 'block';
+        return;
+    }
 
     let maps;
     try {

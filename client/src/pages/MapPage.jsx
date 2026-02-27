@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore.js';
 
 // Import all imperative setup functions
@@ -118,7 +119,7 @@ export default function MapPage() {
     <>
       {/* User bar */}
       <div className="user-bar d-flex align-items-center gap-2">
-        {user && (
+        {user ? (
           <>
             <span className="text-light small">{user.email}</span>
             {user.isPatron ? (
@@ -136,6 +137,11 @@ export default function MapPage() {
             <button className="btn btn-outline-light btn-sm" onClick={logout}>
               Logout
             </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login" className="btn btn-outline-light btn-sm">Sign In</Link>
+            <Link to="/register" className="btn btn-primary btn-sm">Register</Link>
           </>
         )}
       </div>
