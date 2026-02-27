@@ -17,7 +17,7 @@ router.get('/link', auth, (req, res) => {
 
     const params = new URLSearchParams({
       response_type: 'code',
-      client_id: process.env.PATREON_CAMPAIGN_ID,
+      client_id: process.env.PATREON_CLIENT_ID,
       redirect_uri: process.env.PATREON_REDIRECT_URI,
       scope: 'identity identity.memberships',
       state,
@@ -54,7 +54,7 @@ router.get('/callback', async (req, res) => {
     const tokenResponse = await axios.post(`${PATREON_OAUTH_BASE}/token`, new URLSearchParams({
       code,
       grant_type: 'authorization_code',
-      client_id: process.env.PATREON_CAMPAIGN_ID,
+      client_id: process.env.PATREON_CLIENT_ID,
       client_secret: process.env.PATREON_CLIENT_SECRET,
       redirect_uri: process.env.PATREON_REDIRECT_URI,
     }), {
