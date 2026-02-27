@@ -3,6 +3,7 @@ import { Link, useNavigate, Navigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore.js';
 
 export default function RegisterPage() {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,7 +26,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(email, password);
+      await register(username, email, password);
       navigate('/');
     } catch (err) {
       const msg = err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Registration failed';
@@ -44,6 +45,22 @@ export default function RegisterPage() {
           <h2>Create Account</h2>
           {error && <div className="alert alert-danger py-2">{error}</div>}
           <div className="mb-3">
+            <label htmlFor="username" className="form-label">Username</label>
+            <input
+              type="text"
+              className="form-control"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              autoFocus
+              minLength={3}
+              maxLength={30}
+              pattern="[a-zA-Z0-9_]+"
+              title="Letters, numbers, and underscores only"
+            />
+          </div>
+          <div className="mb-3">
             <label htmlFor="email" className="form-label">Email</label>
             <input
               type="email"
@@ -52,7 +69,6 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              autoFocus
             />
           </div>
           <div className="mb-3">

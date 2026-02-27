@@ -28,8 +28,6 @@ export default function MapPage() {
   const initialized = useRef(false);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const linkPatreon = useAuthStore((s) => s.linkPatreon);
-  const unlinkPatreon = useAuthStore((s) => s.unlinkPatreon);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -121,18 +119,11 @@ export default function MapPage() {
       <div className="user-bar d-flex align-items-center gap-2">
         {user ? (
           <>
-            <span className="text-light small">{user.email}</span>
-            {user.isPatron ? (
-              <span className="badge bg-warning text-dark" title="Patreon supporter">Patron</span>
-            ) : (
-              <button className="btn btn-outline-warning btn-sm" onClick={linkPatreon}>
-                Link Patreon
-              </button>
-            )}
+            <Link to="/profile" className="text-light small text-decoration-none" title="View profile">
+              {user.username || user.email}
+            </Link>
             {user.isPatron && (
-              <button className="btn btn-outline-secondary btn-sm" onClick={unlinkPatreon}>
-                Unlink
-              </button>
+              <span className="badge bg-success">Member</span>
             )}
             <button className="btn btn-outline-light btn-sm" onClick={logout}>
               Logout

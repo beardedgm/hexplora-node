@@ -33,11 +33,17 @@ const useAuthStore = create((set, get) => ({
     return data;
   },
 
-  register: async (email, password) => {
-    const data = await authApi.register(email, password);
+  register: async (username, email, password) => {
+    const data = await authApi.register(username, email, password);
     localStorage.setItem(TOKEN_KEY, data.token);
     set({ user: data.user, token: data.token, isAuthenticated: true });
     return data;
+  },
+
+  updateProfile: async (profileData) => {
+    const updatedUser = await authApi.updateProfile(profileData);
+    set({ user: updatedUser });
+    return updatedUser;
   },
 
   logout: () => {

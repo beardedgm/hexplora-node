@@ -100,7 +100,7 @@ router.get('/callback', async (req, res) => {
     user.patreonAccessToken = accessToken;
     user.isPatron = isActivePatron;
     if (isActivePatron) {
-      user.mapLimit = 9999; // Effectively unlimited
+      user.mapLimit = 25; // Member limit
     }
     await user.save();
 

@@ -1,6 +1,7 @@
 import { store } from '../state/index.js';
 import { DEFAULT_MAP, MAX_LIBRARY_INFO_LENGTH } from '../state/defaults.js';
 import * as mapsApi from '../services/maps.js';
+import useAuthStore from '../store/useAuthStore.js';
 import { showStatus } from '../ui/status.js';
 import { log } from '../ui/debug.js';
 import { requestRedraw, resizeCanvases, showCanvases, hideCanvases } from '../canvas/renderer.js';
@@ -12,6 +13,7 @@ import { getFullStateFromStore } from './serialization.js';
 import { generateHexGrid } from '../hex/math.js';
 
 const TOKEN_KEY = 'hexplora_token';
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
 function isAuthenticated() {
     return !!localStorage.getItem(TOKEN_KEY);
@@ -181,6 +183,12 @@ export async function loadLastMap() {
 export async function handleMapUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+        showStatus('Map image must be under 20 MB.', 'error');
+        event.target.value = null;
+        return;
+    }
 
     try {
         // Convert file to base64 data URL
@@ -416,5 +424,18 @@ export async function showLibrary() {
 function updateStorageInfo(mapCount) {
     const storageInfo = document.getElementById('storage-info');
     if (!storageInfo) return;
-    storageInfo.textContent = `Maps saved: ${mapCount}`;
+
+    const user = useAuthStore.getState().user;
+    if (user) {
+        const limit = user.mapLimit;
+        let text = `Maps: ${mapCount} / ${limit}`;
+        if (!user.isPatron && mapCount >= limit) {
+            text += ' — Become a Member for more maps';
+        } else if (!user.isPatron) {
+            text += ` (Members get 25)`;
+        }
+        storageInfo.textContent = text;
+    } else {
+        storageInfo.textContent = `Maps: ${mapCount}`;
+    }
 }
