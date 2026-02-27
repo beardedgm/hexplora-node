@@ -4,6 +4,7 @@ import { applySettingsToStore, applyTokensToStore, getFullStateFromStore } from 
 import * as mapsApi from '../services/maps.js';
 import { updateMapState } from './db.js';
 import { log } from '../ui/debug.js';
+import { showStatus } from '../ui/status.js';
 
 // Debounce timer for persistent saves (API or IndexedDB)
 let persistSaveTimer = null;
@@ -65,6 +66,7 @@ export async function flushSave() {
                 tokens: fullState.tokens,
             });
             log('State flushed to server');
+            showStatus('Saved to cloud', 'success');
         } else {
             await updateMapState(currentMapId, {
                 settings: fullState.settings,
@@ -73,6 +75,7 @@ export async function flushSave() {
                 tokens: fullState.tokens,
             });
             log('State flushed to local storage');
+            showStatus('Saved locally', 'success');
         }
     } catch (err) {
         console.error('Error flushing state:', err);
@@ -102,6 +105,7 @@ export function saveState() {
                             tokens: fullState.tokens,
                         });
                         log('State saved to server');
+                        showStatus('Saved to cloud', 'success');
                     } else {
                         // Local map — save to IndexedDB
                         await updateMapState(currentMapId, {
@@ -111,6 +115,7 @@ export function saveState() {
                             tokens: fullState.tokens,
                         });
                         log('State saved to local storage');
+                        showStatus('Saved locally', 'success');
                     }
                 } catch (err) {
                     console.error('Error saving state:', err);

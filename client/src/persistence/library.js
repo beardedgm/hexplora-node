@@ -479,11 +479,18 @@ export async function showLibrary() {
 function createCloudMapItem(m, libraryModal) {
     const li = document.createElement('li');
     const info = document.createElement('span');
+
+    // Green dot to indicate cloud-synced map
+    const dot = document.createElement('span');
+    dot.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:#48bb78;margin-right:6px;vertical-align:middle;';
+    dot.title = 'Cloud map';
+    info.appendChild(dot);
+
     const infoStr = `${m.name} - ${new Date(m.updatedAt).toLocaleString()}`;
     const truncated = infoStr.length > MAX_LIBRARY_INFO_LENGTH
         ? infoStr.slice(0, MAX_LIBRARY_INFO_LENGTH) + '...'
         : infoStr;
-    info.textContent = truncated;
+    info.appendChild(document.createTextNode(truncated));
     const actions = document.createElement('div');
 
     const loadBtn = document.createElement('button');

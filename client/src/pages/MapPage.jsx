@@ -155,11 +155,6 @@ export default function MapPage() {
           <input type="file" id="map-file-input" className="file-input" accept="image/*" />
         </div>
         <button id="open-library-btn" className="btn btn-secondary btn-sm" title="Open saved map library">Map Library</button>
-        {user?.isPatron ? (
-          <span className="badge bg-success ms-1" title="Maps saved to cloud">Cloud</span>
-        ) : (
-          <span className="badge bg-secondary ms-1" title="Maps saved locally in this browser">Local</span>
-        )}
         <button id="screenshot-btn" className="btn btn-success btn-sm" title="Download map as PNG image">Download Image</button>
       </div>
 
@@ -256,6 +251,9 @@ export default function MapPage() {
       <div id="support-bar">
         <a href="https://discord.gg/emVv2dNvs9" target="_blank" rel="noopener" title="Join us on Discord">
           <i className="bi bi-discord icon"></i>
+        </a>
+        <a href="https://www.patreon.com/BeardedGM" target="_blank" rel="noopener" title="Support us on Patreon">
+          <i className="bi bi-p-square-fill icon"></i>
         </a>
         <a href="https://coff.ee/beardedgm" target="_blank" rel="noopener" title="Buy me a coffee">
           <i className="bi bi-cup-hot-fill icon"></i>
