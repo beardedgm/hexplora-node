@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HexPlora: Web-Based Hex Map Viewer for Tabletop RPGs - Hexploration Hex Crawl Tool</title>
+<meta name="description" content="HexPlora is a free, web-based Hexploration Hex Crawl tool for tabletop RPGs, overlaying a customizable hexagonal grid on your maps. Reveal fog of war, add tokens with notes, and save/load your game state directly in your browser. Perfect for D&D, Pathfinder, and more.">
+<meta name="keywords" content="hex map viewer, hexploration pf2e, hexploration, hexcrawl tool, hexcrawl, tabletop RPG map, fog of war tool, hex grid overlay, virtual tabletop, online map tool, D&D map, Pathfinder map, game master tools, Dungeon Master tools, web-based map, HTML5 canvas map, token management, hex grid, map reveal, RPG utility, free map tool, browser map, responsive map tool">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HY4P7VVKQY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HY4P7VVKQY');
+</script>
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" sizes="96x96" href="/icons/favicon-96x96.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/icons/site.webmanifest">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:title" content="HexPlora: Web-Based Hex Map Viewer for Tabletop RPGs">
+<meta property="og:description" content="Reveal fog of war, add tokens, and customize your hexagonal maps for D&D, Pathfinder, and more. Free and easy to use!">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hexplora.app/">
+<meta property="og:image" content="https://hexplora.app/icons/hexplora-social-share.png">
+<meta property="og:image:alt" content="Screenshot of HexPlora, a web-based hex map viewer for tabletop RPGs">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HexPlora: Web-Based Hex Map Viewer for Tabletop RPGs">
+<meta name="twitter:description" content="Reveal fog of war, add tokens, and customize your hexagonal maps for D&D, Pathfinder, and more. Free and easy to use!">
+<meta name="twitter:image" content="https://hexplora.app/icons/hexplora-social-share.png">
+
+<!-- Stylesheets -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+
+<script>
+  window.addEventListener('error', function(event) {
+    console.error('Global error:', event.message, event.error);
+  });
+  window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
+  });
+</script>
+
+<script type="module" src="./main.jsx"></script>
+
+</body>
+</html>

@@ -1,11 +1,11 @@
 import { store } from '../state/index.js';
 import { DEFAULT_MAP, MAX_LIBRARY_INFO_LENGTH } from '../state/defaults.js';
-import * as db from './db.js';
+import * as mapsApi from '../services/maps.js';
 import { showStatus } from '../ui/status.js';
 import { log } from '../ui/debug.js';
 import { requestRedraw, resizeCanvases, showCanvases, hideCanvases } from '../canvas/renderer.js';
 import { resetView } from '../input/panZoom.js';
-import { applyState, blobToDataURL, dataURLToBlob } from './importExport.js';
+import { applyState, blobToDataURL } from './importExport.js';
 import { pushHistory } from '../state/history.js';
 import { saveState } from './localStorage.js';
 import { getFullStateFromStore } from './serialization.js';
@@ -14,7 +14,23 @@ import { generateHexGrid } from '../hex/math.js';
 let isMapLoading = false;
 let defaultMapAttempted = false;
 
-export async function loadMapFromBlob(blobUrl, state) {
+/**
+ * Convert a File/Blob to a base64 data URL string
+ */
+function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+/**
+ * Load a map from its image data URL and apply state.
+ * Works with both data URLs and object URLs.
+ */
+export async function loadMapFromBlob(imageUrl, state) {
     const loadingElement = document.getElementById('loading');
     if (loadingElement) loadingElement.style.display = 'flex';
     hideCanvases();
@@ -49,7 +65,7 @@ export async function loadMapFromBlob(blobUrl, state) {
             reject(new Error('Failed to load map image'));
         };
 
-        img.src = blobUrl;
+        img.src = imageUrl;
     });
 }
 
@@ -129,23 +145,28 @@ export async function loadLastMap() {
     try {
         const lastId = localStorage.getItem('currentMapId');
         if (!lastId) return false;
-        const entry = await db.getMap(lastId);
+
+        const entry = await mapsApi.fetchMap(lastId);
         if (!entry) return false;
+
         store.update({
-            currentMapId: entry.id,
-            currentMapBlob: entry.blob,
+            currentMapId: entry._id,
             currentMapName: entry.name,
         });
-        const url = URL.createObjectURL(entry.blob);
-        try {
-            await loadMapFromBlob(url, entry.state);
-        } finally {
-            URL.revokeObjectURL(url);
-        }
+
+        // mapImageData is stored as a base64 data URL — use directly as img.src
+        await loadMapFromBlob(entry.mapImageData, {
+            settings: entry.settings,
+            view: entry.view,
+            revealedHexes: entry.revealedHexes,
+            tokens: entry.tokens,
+        });
         return true;
     } catch (error) {
         console.error('Error loading last map:', error);
         log('Error loading last map: ' + error.message);
+        // Clear stale currentMapId if the map no longer exists
+        localStorage.removeItem('currentMapId');
         return false;
     }
 }
@@ -160,24 +181,37 @@ export async function handleMapUpload(event) {
         return;
     }
 
-    const state = getFullStateFromStore();
-
-    let url;
     try {
-        const id = await db.saveMap({ name, blob: file, state, updated: Date.now() });
+        // Convert file to base64 data URL for API storage
+        const mapImageData = await fileToDataURL(file);
+        const state = getFullStateFromStore();
+
+        // Save to API
+        const saved = await mapsApi.createMap({
+            name,
+            mapImageData,
+            settings: state.settings,
+            view: state.view,
+            revealedHexes: state.revealedHexes,
+            tokens: state.tokens,
+        });
+
         store.update({
-            currentMapId: id,
-            currentMapBlob: file,
+            currentMapId: saved._id,
             currentMapName: name,
         });
-        localStorage.setItem('currentMapId', id);
-        url = URL.createObjectURL(file);
-        await loadMapFromBlob(url, state);
+        localStorage.setItem('currentMapId', saved._id);
+
+        // Load the map from the data URL
+        await loadMapFromBlob(mapImageData, state);
     } catch (err) {
         console.error('Map upload error:', err);
-        showStatus('Error uploading map', 'error');
+        if (err.response?.status === 403) {
+            showStatus('Map limit reached! Link Patreon for unlimited maps.', 'error');
+        } else {
+            showStatus('Error uploading map', 'error');
+        }
     } finally {
-        if (url) URL.revokeObjectURL(url);
         event.target.value = null;
     }
 }
@@ -191,31 +225,54 @@ export async function handleImportMap(event) {
         const data = JSON.parse(text);
         if (!data.name || !data.mapData || !data.state) throw new Error('Invalid map file');
 
-        const blob = dataURLToBlob(data.mapData);
-        await db.saveMap({ name: data.name, blob, state: data.state, updated: Date.now() });
+        // data.mapData is already a base64 data URL
+        await mapsApi.createMap({
+            name: data.name,
+            mapImageData: data.mapData,
+            settings: data.state.settings,
+            view: data.state.view,
+            revealedHexes: data.state.revealedHexes,
+            tokens: data.state.tokens,
+        });
+
         showStatus('Map imported', 'success');
         showLibrary();
     } catch (err) {
         console.error('Import map error:', err);
-        showStatus('Error importing map', 'error');
+        if (err.response?.status === 403) {
+            showStatus('Map limit reached! Link Patreon for unlimited maps.', 'error');
+        } else {
+            showStatus('Error importing map', 'error');
+        }
     }
     event.target.value = null;
 }
 
 export async function showLibrary() {
-    const maps = await db.getAllMaps();
-    await updateStorageInfo();
     const libraryList = document.getElementById('library-list');
     const libraryModal = document.getElementById('library-modal');
     if (!libraryList) return;
 
     libraryList.innerHTML = '';
-    maps.sort((a, b) => b.updated - a.updated);
+
+    let maps;
+    try {
+        maps = await mapsApi.fetchMaps();
+    } catch (err) {
+        console.error('Error fetching map library:', err);
+        showStatus('Error loading map library', 'error');
+        return;
+    }
+
+    updateStorageInfo(maps.length);
+
+    // Sort by updatedAt descending
+    maps.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
     for (const m of maps) {
         const li = document.createElement('li');
         const info = document.createElement('span');
-        const infoStr = `${m.name} - ${new Date(m.updated).toLocaleString()}`;
+        const infoStr = `${m.name} - ${new Date(m.updatedAt).toLocaleString()}`;
         const truncated = infoStr.length > MAX_LIBRARY_INFO_LENGTH
             ? infoStr.slice(0, MAX_LIBRARY_INFO_LENGTH) + '...'
             : infoStr;
@@ -226,24 +283,24 @@ export async function showLibrary() {
         loadBtn.textContent = 'Load';
         loadBtn.className = 'btn btn-primary btn-sm';
         loadBtn.addEventListener('click', async () => {
-            const url = URL.createObjectURL(m.blob);
             try {
+                // Fetch full map data (including image) from API
+                const fullMap = await mapsApi.fetchMap(m._id);
                 store.update({
-                    currentMapId: m.id,
-                    currentMapBlob: m.blob,
-                    currentMapName: m.name,
+                    currentMapId: fullMap._id,
+                    currentMapName: fullMap.name,
                 });
-                localStorage.setItem('currentMapId', m.id);
-                await loadMapFromBlob(url, m.state);
+                localStorage.setItem('currentMapId', fullMap._id);
+                await loadMapFromBlob(fullMap.mapImageData, {
+                    settings: fullMap.settings,
+                    view: fullMap.view,
+                    revealedHexes: fullMap.revealedHexes,
+                    tokens: fullMap.tokens,
+                });
                 if (libraryModal) libraryModal.style.display = 'none';
-                await db.updateMap(m.id, {
-                    name: m.name,
-                    blob: m.blob,
-                    state: m.state,
-                    updated: Date.now(),
-                });
-            } finally {
-                URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error('Error loading map:', err);
+                showStatus('Error loading map', 'error');
             }
         });
 
@@ -253,9 +310,14 @@ export async function showLibrary() {
         renameBtn.addEventListener('click', async () => {
             const newName = prompt('Enter new name:', m.name);
             if (newName) {
-                await db.renameMap(m.id, newName);
-                if (store.get('currentMapId') === m.id) store.set('currentMapName', newName);
-                showLibrary();
+                try {
+                    await mapsApi.updateMap(m._id, { name: newName });
+                    if (store.get('currentMapId') === m._id) store.set('currentMapName', newName);
+                    showLibrary();
+                } catch (err) {
+                    console.error('Rename error:', err);
+                    showStatus('Error renaming map', 'error');
+                }
             }
         });
 
@@ -264,16 +326,20 @@ export async function showLibrary() {
         deleteBtn.className = 'btn btn-danger btn-sm';
         deleteBtn.addEventListener('click', async () => {
             if (confirm('Delete this map?')) {
-                await db.deleteMap(m.id);
-                if (store.get('currentMapId') === m.id) {
-                    store.update({
-                        currentMapId: null,
-                        currentMapBlob: null,
-                        currentMapName: '',
-                    });
-                    localStorage.removeItem('currentMapId');
+                try {
+                    await mapsApi.deleteMap(m._id);
+                    if (store.get('currentMapId') === m._id) {
+                        store.update({
+                            currentMapId: null,
+                            currentMapName: '',
+                        });
+                        localStorage.removeItem('currentMapId');
+                    }
+                    showLibrary();
+                } catch (err) {
+                    console.error('Delete error:', err);
+                    showStatus('Error deleting map', 'error');
                 }
-                showLibrary();
             }
         });
 
@@ -282,12 +348,22 @@ export async function showLibrary() {
         exportBtn.className = 'btn btn-success btn-sm';
         exportBtn.addEventListener('click', async () => {
             try {
-                const mapData = await blobToDataURL(m.blob);
-                const exportObj = { name: m.name, state: m.state, mapData };
+                // Fetch full map data for export
+                const fullMap = await mapsApi.fetchMap(m._id);
+                const exportObj = {
+                    name: fullMap.name,
+                    state: {
+                        settings: fullMap.settings,
+                        view: fullMap.view,
+                        revealedHexes: fullMap.revealedHexes,
+                        tokens: fullMap.tokens,
+                    },
+                    mapData: fullMap.mapImageData,
+                };
                 const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportObj));
                 const link = document.createElement('a');
                 link.setAttribute('href', dataStr);
-                const safeName = m.name.replace(/\s+/g, '_');
+                const safeName = fullMap.name.replace(/\s+/g, '_');
                 link.setAttribute('download', safeName + '.json');
                 document.body.appendChild(link);
                 link.click();
@@ -306,15 +382,8 @@ export async function showLibrary() {
     if (libraryModal) libraryModal.style.display = 'block';
 }
 
-async function updateStorageInfo() {
+function updateStorageInfo(mapCount) {
     const storageInfo = document.getElementById('storage-info');
-    if (!storageInfo || !navigator.storage || !navigator.storage.estimate) return;
-    try {
-        const { usage, quota } = await navigator.storage.estimate();
-        const used = (usage / (1024 * 1024)).toFixed(1);
-        const total = (quota / (1024 * 1024)).toFixed(1);
-        storageInfo.textContent = `Storage used: ${used} MB of ${total} MB`;
-    } catch (err) {
-        console.error('Storage estimate error:', err);
-    }
+    if (!storageInfo) return;
+    storageInfo.textContent = `Maps saved: ${mapCount}`;
 }
