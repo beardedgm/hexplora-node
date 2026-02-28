@@ -101,10 +101,10 @@ export default function MapPage() {
         } catch (err) {
           console.error('Font loading error:', err);
         }
-        requestRedraw();
       }
 
       updateUndoRedoButtons();
+      requestRedraw();
       startRenderLoop();
       log('App initialized');
     }
