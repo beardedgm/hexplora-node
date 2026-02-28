@@ -1,13 +1,28 @@
 import apiClient from './client.js';
 
+let fetchMapController = null;
+
 export async function fetchMaps() {
   const { data } = await apiClient.get('/maps');
-  return data;
+  // Support both paginated { maps: [] } and legacy array responses
+  return data.maps || data;
 }
 
 export async function fetchMap(id) {
-  const { data } = await apiClient.get(`/maps/${id}`);
-  return data;
+  // Cancel any previous in-flight fetchMap request
+  if (fetchMapController) {
+    fetchMapController.abort();
+  }
+  fetchMapController = new AbortController();
+
+  try {
+    const { data } = await apiClient.get(`/maps/${id}`, {
+      signal: fetchMapController.signal,
+    });
+    return data;
+  } finally {
+    fetchMapController = null;
+  }
 }
 
 export async function createMap(mapData) {

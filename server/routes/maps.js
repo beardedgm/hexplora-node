@@ -2,6 +2,7 @@ import { Router } from 'express';
 import auth from '../middleware/auth.js';
 import mapLimit from '../middleware/mapLimit.js';
 import Map from '../models/Map.js';
+import { mapBodyRules, handleValidationErrors } from '../middleware/validators.js';
 
 const router = Router();
 
@@ -11,16 +12,30 @@ router.use(auth);
 // GET /api/maps — list user's maps (no image data for performance)
 router.get('/', async (req, res) => {
   try {
-    const maps = await Map.find({ userId: req.user._id })
-      .select('name settings.hexSize settings.columnCount settings.rowCount createdAt updatedAt')
-      .sort({ updatedAt: -1 });
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 25));
+    const skip = (page - 1) * limit;
 
-    res.json(maps.map(m => ({
-      _id: m._id,
-      name: m.name,
-      createdAt: m.createdAt,
-      updatedAt: m.updatedAt,
-    })));
+    const [maps, total] = await Promise.all([
+      Map.find({ userId: req.user._id })
+        .select('name createdAt updatedAt')
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Map.countDocuments({ userId: req.user._id }),
+    ]);
+
+    res.json({
+      maps: maps.map(m => ({
+        _id: m._id,
+        name: m.name,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+      })),
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error('List maps error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -47,17 +62,12 @@ router.post('/', (req, res, next) => {
     return res.status(403).json({ error: 'Cloud storage requires an active membership' });
   }
   next();
-}, mapLimit, async (req, res) => {
+}, mapLimit, [
+  ...mapBodyRules(),
+  handleValidationErrors,
+], async (req, res) => {
   try {
     const { name, mapImageData, settings, view, revealedHexes, tokens } = req.body;
-
-    // Input validation
-    if (name !== undefined && (typeof name !== 'string' || name.length > 200)) {
-      return res.status(400).json({ error: 'Map name must be a string under 200 characters' });
-    }
-    if (mapImageData !== undefined && typeof mapImageData !== 'string') {
-      return res.status(400).json({ error: 'Invalid map image data' });
-    }
 
     const map = new Map({
       userId: req.user._id,
@@ -78,7 +88,10 @@ router.post('/', (req, res, next) => {
 });
 
 // PUT /api/maps/:id — update map
-router.put('/:id', async (req, res) => {
+router.put('/:id', [
+  ...mapBodyRules(),
+  handleValidationErrors,
+], async (req, res) => {
   try {
     const map = await Map.findOne({ _id: req.params.id, userId: req.user._id });
     if (!map) {
@@ -86,14 +99,6 @@ router.put('/:id', async (req, res) => {
     }
 
     const { name, mapImageData, settings, view, revealedHexes, tokens } = req.body;
-
-    // Input validation
-    if (name !== undefined && (typeof name !== 'string' || name.length > 200)) {
-      return res.status(400).json({ error: 'Map name must be a string under 200 characters' });
-    }
-    if (mapImageData !== undefined && typeof mapImageData !== 'string') {
-      return res.status(400).json({ error: 'Invalid map image data' });
-    }
 
     if (name !== undefined) map.name = name;
     if (mapImageData !== undefined) map.mapImageData = mapImageData;

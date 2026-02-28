@@ -54,6 +54,9 @@ const useAuthStore = create((set, get) => ({
   // Patreon
   linkPatreon: async () => {
     const data = await patreonApi.getPatreonLinkUrl();
+    if (!data.url || !data.url.startsWith('https://www.patreon.com/')) {
+      throw new Error('Invalid Patreon redirect URL');
+    }
     window.location.href = data.url;
   },
 

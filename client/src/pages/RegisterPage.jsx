@@ -29,7 +29,8 @@ export default function RegisterPage() {
       await register(username, email, password);
       navigate('/');
     } catch (err) {
-      const msg = err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Registration failed';
+      const data = err.response?.data;
+      const msg = data?.error || data?.details?.[0]?.message || data?.errors?.[0]?.msg || 'Registration failed';
       setError(msg);
     } finally {
       setLoading(false);
@@ -80,7 +81,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
             />
           </div>
           <div className="mb-3">
@@ -92,7 +93,7 @@ export default function RegisterPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
             />
           </div>
           <button type="submit" className="btn btn-primary w-100" disabled={loading}>

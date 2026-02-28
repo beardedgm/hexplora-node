@@ -5,6 +5,7 @@ import * as localDb from './db.js';
 import useAuthStore from '../store/useAuthStore.js';
 import { showStatus } from '../ui/status.js';
 import { log } from '../ui/debug.js';
+import { openModal } from '../ui/modals.js';
 import { requestRedraw, resizeCanvases, showCanvases, hideCanvases } from '../canvas/renderer.js';
 import { resetView } from '../input/panZoom.js';
 import { applyState, blobToDataURL } from './importExport.js';
@@ -15,6 +16,7 @@ import { generateHexGrid } from '../hex/math.js';
 
 const TOKEN_KEY = 'hexplora_token';
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'];
 
 function isAuthenticated() {
     return !!localStorage.getItem(TOKEN_KEY);
@@ -221,6 +223,12 @@ export async function loadLastMap() {
 export async function handleMapUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    if (!file.type || !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        showStatus('Invalid file type. Please upload a PNG, JPEG, GIF, WebP, or SVG image.', 'error');
+        event.target.value = null;
+        return;
+    }
 
     if (file.size > MAX_FILE_SIZE) {
         showStatus('Map image must be under 20 MB.', 'error');
@@ -473,7 +481,7 @@ export async function showLibrary() {
         }
     }
 
-    if (libraryModal) libraryModal.style.display = 'block';
+    openModal(libraryModal);
 }
 
 function createCloudMapItem(m, libraryModal) {
