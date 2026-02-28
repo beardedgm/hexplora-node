@@ -7,6 +7,14 @@ import mongoSanitize from 'express-mongo-sanitize';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
+import {
+  RATE_LIMIT_WINDOW_MS,
+  RATE_LIMIT_MAX_GENERAL,
+  RATE_LIMIT_MAX_AUTH,
+  RATE_LIMIT_MAX_MAP_WRITE,
+  RATE_LIMIT_MAP_WRITE_WINDOW_MS,
+  BODY_SIZE_LIMIT,
+} from './config/constants.js';
 import authRoutes from './routes/auth.js';
 import mapRoutes from './routes/maps.js';
 import patreonRoutes from './routes/patreon.js';
@@ -46,32 +54,43 @@ app.use(cors({
 }));
 
 // Body parsers
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+app.use(express.json({ limit: BODY_SIZE_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: BODY_SIZE_LIMIT }));
 
 // Strip MongoDB operators ($, .) from request body/query/params — prevents NoSQL injection
 app.use(mongoSanitize());
 
-// General rate limiter: 100 requests per 15 minutes per IP
+// General rate limiter
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: RATE_LIMIT_MAX_GENERAL,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later' },
 });
 app.use('/api', generalLimiter);
 
-// Strict auth rate limiter: 15 attempts per 15 minutes per IP
+// Strict auth rate limiter
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: RATE_LIMIT_MAX_AUTH,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many attempts, please try again later' },
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+
+// Map write rate limiter (POST/PUT/DELETE)
+const mapWriteLimiter = rateLimit({
+  windowMs: RATE_LIMIT_MAP_WRITE_WINDOW_MS,
+  max: RATE_LIMIT_MAX_MAP_WRITE,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many map operations, please try again shortly' },
+  skip: (req) => req.method === 'GET',
+});
+app.use('/api/maps', mapWriteLimiter);
 
 // --- API Routes ---
 app.use('/api/auth', authRoutes);

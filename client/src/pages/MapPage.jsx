@@ -229,19 +229,19 @@ export default function MapPage() {
       </div>
 
       {/* Map canvas container */}
-      <div className="map-container" id="map-container">
-        <canvas id="map-layer" className="map-layer"></canvas>
-        <canvas id="grid-layer" className="map-layer"></canvas>
-        <canvas id="token-layer" className="map-layer"></canvas>
-        <div className="loading" id="loading">Loading map...</div>
-        <div id="token-tooltip" className="token-tooltip"></div>
+      <div className="map-container" id="map-container" role="application" aria-label="Hex map viewer">
+        <canvas id="map-layer" className="map-layer" aria-hidden="true"></canvas>
+        <canvas id="grid-layer" className="map-layer" aria-hidden="true"></canvas>
+        <canvas id="token-layer" className="map-layer" tabIndex="0" aria-label="Interactive hex grid with tokens and fog of war"></canvas>
+        <div className="loading" id="loading" role="status" aria-live="polite">Loading map...</div>
+        <div id="token-tooltip" className="token-tooltip" role="tooltip"></div>
       </div>
 
       {/* Info bar */}
       <div id="info-bar">
         <span id="zoom-display">Zoom: 100%</span>
         <span id="coord-display">Hex: ---</span>
-        <div id="status-indicator"></div>
+        <div id="status-indicator" role="status" aria-live="polite"></div>
         <button id="undo-btn" className="btn btn-secondary btn-sm" title="Undo (Ctrl+Z)" disabled>Undo</button>
         <button id="redo-btn" className="btn btn-secondary btn-sm" title="Redo (Ctrl+Y)" disabled>Redo</button>
         <button id="help-btn" className="btn btn-outline-light btn-sm help-btn" title="Keyboard shortcuts (?)">?</button>
@@ -263,7 +263,7 @@ export default function MapPage() {
       <div id="debug-info"></div>
 
       {/* Token label modal */}
-      <div id="token-label-modal" className="modal">
+      <div id="token-label-modal" className="modal" role="dialog" aria-modal="true" aria-label="Token label">
         <div className="modal-content">
           <div className="modal-header">
             <h2>Token Label</h2>
@@ -311,7 +311,7 @@ export default function MapPage() {
       </div>
 
       {/* Library modal */}
-      <div id="library-modal" className="modal">
+      <div id="library-modal" className="modal" role="dialog" aria-modal="true" aria-label="Map library">
         <div className="modal-content">
           <div className="modal-header">
             <h2>Map Library</h2>
@@ -332,7 +332,7 @@ export default function MapPage() {
       </div>
 
       {/* Help / keyboard shortcuts modal */}
-      <div id="help-modal" className="modal">
+      <div id="help-modal" className="modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
         <div className="modal-content">
           <div className="modal-header">
             <h2>Keyboard Shortcuts</h2>

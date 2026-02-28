@@ -1,13 +1,20 @@
 import { Router } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
+import { JWT_EXPIRY } from '../config/constants.js';
+import {
+  usernameRules,
+  emailRules,
+  passwordRules,
+  handleValidationErrors,
+} from '../middleware/validators.js';
 
 const router = Router();
 
 function generateToken(userId) {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRY });
 }
 
 function formatUser(user) {
@@ -23,19 +30,12 @@ function formatUser(user) {
 
 // POST /api/auth/register
 router.post('/register', [
-  body('username')
-    .trim()
-    .isLength({ min: 3, max: 30 }).withMessage('Username must be 3-30 characters')
-    .matches(/^[a-zA-Z0-9_]+$/).withMessage('Username can only contain letters, numbers, and underscores'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  usernameRules(),
+  emailRules(),
+  passwordRules(),
+  handleValidationErrors,
 ], async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { username, email, password } = req.body;
 
     const existingEmail = await User.findOne({ email });
@@ -61,15 +61,11 @@ router.post('/register', [
 
 // POST /api/auth/login
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  emailRules(),
   body('password').notEmpty().withMessage('Password required'),
+  handleValidationErrors,
 ], async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
@@ -97,17 +93,10 @@ router.get('/me', auth, (req, res) => {
 
 // PUT /api/auth/profile — update username
 router.put('/profile', auth, [
-  body('username')
-    .trim()
-    .isLength({ min: 3, max: 30 }).withMessage('Username must be 3-30 characters')
-    .matches(/^[a-zA-Z0-9_]+$/).withMessage('Username can only contain letters, numbers, and underscores'),
+  usernameRules(),
+  handleValidationErrors,
 ], async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { username } = req.body;
 
     // Check uniqueness (case-insensitive, excluding current user)

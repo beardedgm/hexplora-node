@@ -3,18 +3,34 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
+import { encrypt } from '../util/crypto.js';
+import {
+  JWT_STATE_EXPIRY,
+  PATRON_MAP_LIMIT,
+  FREE_MAP_LIMIT,
+  PATREON_PATRON_STATUS,
+} from '../config/constants.js';
 
 const router = Router();
 
-const PATREON_OAUTH_BASE = 'https://www.patreon.com/oauth2';          // Browser-facing (authorize)
-const PATREON_API_BASE   = 'https://www.patreon.com/api/oauth2/v2';   // API v2 (identity, etc.)
-const PATREON_TOKEN_URL  = 'https://www.patreon.com/api/oauth2/token'; // Token exchange
+const PATREON_OAUTH_BASE = 'https://www.patreon.com/oauth2';
+const PATREON_API_BASE   = 'https://www.patreon.com/api/oauth2/v2';
+const PATREON_TOKEN_URL  = 'https://www.patreon.com/api/oauth2/token';
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+// Minimal logger — verbose in dev, quiet in production
+function log(...args) { if (isDev) console.log('[Patreon]', ...args); }
+function warn(...args) { console.warn('[Patreon]', ...args); }
 
 // GET /api/patreon/link — get Patreon OAuth URL (requires auth)
 router.get('/link', auth, (req, res) => {
   try {
-    // Encode user ID in state param so callback knows which user to link
-    const state = jwt.sign({ userId: req.user._id.toString() }, process.env.JWT_SECRET, { expiresIn: '10m' });
+    const state = jwt.sign(
+      { userId: req.user._id.toString() },
+      process.env.JWT_SECRET,
+      { expiresIn: JWT_STATE_EXPIRY },
+    );
 
     const params = new URLSearchParams({
       response_type: 'code',
@@ -27,7 +43,7 @@ router.get('/link', auth, (req, res) => {
     const url = `${PATREON_OAUTH_BASE}/authorize?${params.toString()}`;
     res.json({ url });
   } catch (error) {
-    console.error('Patreon link error:', error);
+    console.error('Patreon link error:', error.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -38,10 +54,10 @@ router.get('/callback', async (req, res) => {
 
   try {
     const { code, state } = req.query;
-    console.log('[Patreon] Callback hit, code:', !!code, 'state:', !!state);
+    log('Callback received');
 
     if (!code || !state) {
-      console.warn('[Patreon] Missing code or state params');
+      warn('Missing code or state params');
       return res.redirect(`${clientUrl}/profile?patreon=error&message=missing_params`);
     }
 
@@ -50,13 +66,12 @@ router.get('/callback', async (req, res) => {
     try {
       decoded = jwt.verify(state, process.env.JWT_SECRET);
     } catch {
-      console.warn('[Patreon] Invalid state JWT');
+      warn('Invalid state JWT');
       return res.redirect(`${clientUrl}/profile?patreon=error&message=invalid_state`);
     }
-    console.log('[Patreon] State verified, userId:', decoded.userId);
+    log('State verified');
 
     // Exchange code for access token
-    console.log('[Patreon] Exchanging code for token, client_id set:', !!process.env.PATREON_CLIENT_ID);
     const tokenResponse = await axios.post(PATREON_TOKEN_URL, new URLSearchParams({
       code,
       grant_type: 'authorization_code',
@@ -68,7 +83,7 @@ router.get('/callback', async (req, res) => {
     });
 
     const accessToken = tokenResponse.data.access_token;
-    console.log('[Patreon] Token exchange successful');
+    log('Token exchange successful');
 
     // Get Patreon identity + memberships
     const identityResponse = await axios.get(`${PATREON_API_BASE}/identity`, {
@@ -82,22 +97,20 @@ router.get('/callback', async (req, res) => {
 
     const patreonData = identityResponse.data;
     const patreonUserId = patreonData.data.id;
-    console.log('[Patreon] Identity fetched, patreonUserId:', patreonUserId);
 
     // Check if user is an active patron of our campaign
     let isActivePatron = false;
     const included = patreonData.included || [];
-    console.log('[Patreon] Included items:', included.length, 'campaignId:', process.env.PATREON_CAMPAIGN_ID);
     for (const item of included) {
       if (item.type === 'member') {
         const campaignRelation = item.relationships?.campaign?.data;
-        console.log('[Patreon] Member found, campaign:', campaignRelation?.id, 'status:', item.attributes.patron_status);
         if (campaignRelation?.id === process.env.PATREON_CAMPAIGN_ID) {
-          isActivePatron = item.attributes.patron_status === 'active_patron';
+          isActivePatron = item.attributes.patron_status === PATREON_PATRON_STATUS;
           break;
         }
       }
     }
+
     // If not found as a patron, check if user is the campaign creator/owner
     if (!isActivePatron) {
       try {
@@ -105,38 +118,37 @@ router.get('/callback', async (req, res) => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const campaigns = campaignsResponse.data?.data || [];
-        console.log('[Patreon] User campaigns:', campaigns.map(c => c.id));
         const isCreator = campaigns.some(c => c.id === process.env.PATREON_CAMPAIGN_ID);
         if (isCreator) {
-          console.log('[Patreon] User is campaign OWNER — granting patron status');
+          log('User is campaign owner — granting patron status');
           isActivePatron = true;
         }
       } catch (campErr) {
-        console.log('[Patreon] Could not check campaign ownership:', campErr.response?.data || campErr.message);
+        log('Could not check campaign ownership:', campErr.message);
       }
     }
 
-    console.log('[Patreon] Final isActivePatron:', isActivePatron);
+    log('Patron status resolved:', isActivePatron);
 
     // Update user in database
     const user = await User.findById(decoded.userId);
     if (!user) {
-      console.warn('[Patreon] User not found:', decoded.userId);
+      warn('User not found for linking');
       return res.redirect(`${clientUrl}/profile?patreon=error&message=user_not_found`);
     }
 
     user.patreonId = patreonUserId;
-    user.patreonAccessToken = accessToken;
+    user.patreonAccessToken = encrypt(accessToken);
     user.isPatron = isActivePatron;
     if (isActivePatron) {
-      user.mapLimit = 25; // Member limit
+      user.mapLimit = PATRON_MAP_LIMIT;
     }
     await user.save();
-    console.log('[Patreon] User updated — patreonId:', patreonUserId, 'isPatron:', isActivePatron, 'mapLimit:', user.mapLimit);
+    log('User linked, isPatron:', isActivePatron);
 
     res.redirect(`${clientUrl}/profile?patreon=linked`);
   } catch (error) {
-    console.error('[Patreon] Callback error:', error.response?.data || error.message);
+    console.error('[Patreon] Callback error:', error.message);
     res.redirect(`${clientUrl}/profile?patreon=error&message=server_error`);
   }
 });
@@ -148,12 +160,12 @@ router.post('/unlink', auth, async (req, res) => {
     user.patreonId = null;
     user.patreonAccessToken = null;
     user.isPatron = false;
-    user.mapLimit = 5; // Revert to free limit
+    user.mapLimit = FREE_MAP_LIMIT;
     await user.save();
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Patreon unlink error:', error);
+    console.error('Patreon unlink error:', error.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
